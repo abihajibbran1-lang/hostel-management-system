@@ -1,8 +1,8 @@
-# S01 — Authentication and RBAC
+# S00 — Project Foundation
 
 **Status:** Specification Draft — team review required  
 **Owner:** Member 1 (provisional; confirm actual name)  
-**Reviewer:** Member 3 (provisional; confirm actual name)  
+**Reviewer:** Member 2 (provisional; confirm actual name)  
 **Coordinator:** Abiha  
 **Priority:** P0 (proposed in the Slice Register)  
 **Target wave:** Wave 1 — Foundation  
@@ -13,327 +13,295 @@
 ## 1. Purpose and outcome
 
 ### Purpose
-Provide the approved stateless JWT authentication and centralized role-based authorization boundary for the Hostel Management System.
+Establish the shared application and repository foundation on which the six domain modules and shared capabilities can be implemented consistently.
 
 ### Expected outcome
-The system can authenticate provisioned user accounts, establish the authenticated user's identity and role through a stateless JWT, protect the token using the approved cookie settings, and enforce centralized role and single-owner access checks before protected requests reach Business Logic services.
+A locally runnable project foundation that follows the approved 3-Tier Layered Architecture, uses the approved technology stack, preserves the required module boundaries, and provides the baseline web-application, database, validation, error-handling, and worker-process structure needed by later slices.
 
 ### Why this is a separate slice
-Authentication and authorization are shared prerequisites for every domain module. Implementing them once at the central boundary prevents each module from inventing its own authentication or role-checking approach.
+All later implementation slices depend on a consistent project structure, agreed tier boundaries, local development setup, and shared technical conventions. S00 establishes those foundations without implementing the business workflows owned by later slices.
 
 ## 2. Requirement and decision traceability
 
-| Source | Requirement / decision | S01 obligation |
+S00 has no standalone PRD functional requirement. Its obligations are derived from the approved architecture and accepted ADRs.
+
+| Source | Requirement / decision | S00 obligation |
 |---|---|---|
-| NFR-01 | Students can view only their own schedules, responsibilities, and complaints; cross-student visibility is prohibited | Establish centralized identity/authorization controls that support the required privacy boundary. |
-| BR-01 | Anonymous complaints are prohibited and complaints must link to an authenticated student ID | Provide authenticated identity for complaint submission; complaint-specific enforcement is tested again in S06. |
-| BR-04 | Student access is limited to self-owned records | Ensure authenticated identity is available to protected routes and ownership checks are enforced before business logic. |
-| CON-02 | RBAC must enforce single-owner privacy for all student data | Enforce role checks and ownership boundary centrally, with resource-specific ownership applied by protected module operations. |
-| Architecture §5.2, §12.1, §13, §15.1, §16 | Auth module, centralized middleware, JWT, bcrypt, user account fields | Implement the documented Auth responsibility and user persistence baseline. |
-| ADR-003 | Stateless JWT with Centralized RBAC Middleware Guard | Middleware evaluates user ID and role claims and enforces single-owner row-level access control on API endpoints before requests reach business logic. |
-| Architecture §17 | `src/business/modules/auth/`, `src/data/repositories/auth/`, `src/app/api/auth/`, `src/middleware.ts` | Place Auth implementation within the approved logical structure, adapting filenames only where required by Next.js conventions. |
+| `architecture.md` §4; ADR-001 | 3-Tier Layered Architecture | Establish Presentation, Business Logic, and Central RDBMS Data Tier boundaries. |
+| `architecture.md` §5 and §17 | Six domain modules and approved logical project structure | Create the agreed structural locations and preserve module ownership boundaries. |
+| `architecture.md` §12 | Approved technology stack | Use the selected technologies listed in Section 3 of this specification. |
+| `architecture.md` §12.1 | Route handlers, Zod validation, module services, module repositories, Prisma | Establish the shared conventions and minimal foundation; detailed module contracts remain with later slices. |
+| `architecture.md` §14; ADR-005 | Five-minute polling worker, persistent job metadata, retry/recovery requirements | Establish a dedicated worker entry point and local process capability; implement actual responsibility and complaint jobs in their owning slices. |
+| `architecture.md` §15.9 | Single PostgreSQL database, one Prisma schema, module-owned tables | Establish one Prisma schema and module-organized repository structure. |
+| `architecture.md` §17 | Worker has a dedicated entry point; app and worker may run as separate local processes | Ensure both local processes can be started independently. |
+| NFR-02 | Complaint tracking views and schedule updates within 2.0 seconds under standard operation | Preserve this as a system-level quality target; S00 does not claim to verify it. |
+| NFR-04 | 99.0% monthly operational availability during operating term periods | Preserve this as a system-level quality target; S00 does not claim to verify it. |
+| NFR-01; CON-02 | Privacy and access control | Establish architecture boundaries that allow centralized authentication and privacy enforcement in S01 and later module slices. |
 
-## 3. Approved authentication and authorization baseline
+## 3. Approved technical baseline
 
-The following are fixed decisions from the architecture and ADR-003:
+The implementation must use the following selections from `architecture.md` §12:
 
-- Authentication approach: stateless JWT.
-- JWT expiry: eight hours.
-- Token storage: HttpOnly cookie.
-- Cookie settings: `Secure` in production and `SameSite=Lax`.
-- Apply CSRF protection to state-changing operations as required by the cookie-based authentication design.
-- Password hashing: bcrypt; plaintext passwords must never be stored.
-- Centralized RBAC middleware evaluates authenticated user ID and role claims.
-- Centralized middleware enforces role authorization and single-owner row-level access control on protected API endpoints before requests reach Business Logic.
-- Supported RBAC roles are exactly:
-  - Student
-  - Warden
-  - Kitchen Staff
-  - Manager
-- Logout clears the authentication cookie.
-- No token blacklist or refresh-token mechanism is selected for this version. A copied JWT may remain valid until its expiry.
+| Concern | Approved selection |
+|---|---|
+| Web application | Next.js |
+| Language | TypeScript |
+| UI styling | Tailwind CSS |
+| UI components | shadcn/ui |
+| API transport | REST through Next.js Route Handlers |
+| Input validation | Zod |
+| API errors | Consistent standardized error response format |
+| Relational database | PostgreSQL |
+| ORM | Prisma |
+| Database hosting | Supabase PostgreSQL |
+| File storage | Supabase Storage, private bucket for Lost & Found images |
+| Authentication | Stateless JWT |
+| Password hashing | bcrypt |
+| Runtime | Node.js |
+| Scheduled polling | node-cron |
+| Worker deployment for this deliverable | Local development; production hosting remains undecided |
 
-Do not replace this approach with stateful server-side sessions unless the team formally changes the accepted ADR.
+The system uses one PostgreSQL database and one Prisma schema. Repositories are organized by module. The technology selections do not change the 3-Tier Layered Architecture.
 
 ## 4. Scope
 
 ### Included
 
-- Auth module foundation under the approved module boundary.
-- Authentication of existing/provisioned user accounts.
-- Password verification using bcrypt hashes.
-- Stateless JWT issuance and verification according to the approved eight-hour expiry.
-- HttpOnly cookie handling with the approved settings.
-- Logout behavior that clears the authentication cookie.
-- Centralized middleware/guard that reads authenticated user ID and role claims.
-- Role authorization for the four approved RBAC roles.
-- Single-owner access control at the protected API boundary, so student-owned resources cannot be accessed by another student.
-- Auth user repository and persistence using the single Prisma schema.
-- Consistent handling of unauthenticated and unauthorized requests using the project's standardized API error convention from S00.
-- Tests for authentication, role restrictions, ownership boundaries, cookie behavior, expiry, and logout.
+- Establish the GitHub repository's application foundation and baseline developer setup.
+- Establish the Next.js and TypeScript application using the approved stack.
+- Establish the logical tier structure:
+  - Presentation Tier
+  - Business Logic Tier
+  - Central RDBMS Data Tier
+- Establish the approved logical locations for:
+  - `src/app/` and REST API route-handler areas
+  - `src/components/`
+  - `src/business/modules/`
+  - `src/business/notifications/`
+  - `src/business/workers/`
+  - `src/data/repositories/`
+  - `src/data/database/`
+  - `src/data/storage/`
+  - `src/shared/`
+  - `prisma/schema.prisma`
+- Preserve all six domain module boundaries: Auth, Laundry, Complaints, Meals, Schedules & Responsibilities, and Lost & Found.
+- Establish one Prisma schema and the connection/configuration foundation for the single Supabase PostgreSQL database.
+- Establish shared Zod-validation and standardized API-error conventions without deciding every module's endpoint contract.
+- Establish the dedicated worker entry point and local ability to run the worker separately from the web application.
+- Provide an `.env.example` containing variable-name placeholders only, with no real credentials or secrets.
+- Provide clear local setup and run instructions in `README.md`.
+- Verify the baseline project can be installed, type-checked, and started locally using documented commands.
 
 ### Excluded
 
-- Creating a public self-registration workflow. The source documents do not specify whether users can self-register.
-- Defining who provisions initial user accounts or who may create/deactivate staff accounts.
-- Password reset, email verification, multi-factor authentication, social login, account recovery, or password-change workflows; these are not specified in the approved source documents.
-- Token refresh, refresh-token storage, or token blacklist; explicitly not selected for this version.
-- Implementing business workflows for complaints, schedules, responsibilities, meals, laundry, or Lost & Found.
-- Replacing module-specific business rules with generic middleware logic.
-- Making assumptions that all authenticated users may access all records.
-- Introducing additional RBAC roles.
+- Implementing login, logout, JWT issuance/verification, role guards, or row-level authorization (S01).
+- Implementing any domain business workflow (S02–S14).
+- Implementing actual notification inbox behavior (S02).
+- Implementing actual responsibility reminder or complaint escalation job handlers (S05/S08).
+- Designing final API paths or detailed request/response schemas for all modules; the architecture explicitly leaves these as implementation-level contracts.
+- Deciding production hosting or production deployment topology.
+- Adding a separate database, Prisma schema, microservice, queue broker, or alternative architecture.
+- Adding unapproved third-party services or architectural patterns.
 
 ### Boundary and ownership
 
-- Auth owns user account identity, password hashes, role values, authentication, and centralized authorization integration.
-- Auth does not own domain records belonging to other modules.
-- Other modules must use the authenticated identity and enforce the relevant record ownership/business rules through their own services and repositories.
-- Protected requests must pass the centralized Auth boundary before Business Logic is reached.
-- The architecture states that cross-module operations use owning module service interfaces; Auth must not directly query another module's tables to perform that module's business operation.
+- S00 owns shared project scaffolding and cross-cutting baseline conventions only.
+- Domain tables and business rules remain owned by their domain modules.
+- The Auth module's authentication and authorization behavior belongs to S01.
+- Notification persistence and read-state behavior belong to S02.
+- The worker foundation belongs to S00; domain-specific scheduled job behavior belongs to the relevant slices.
+- Do not create a seventh domain module for notifications or treat the worker as a domain module.
 
 ## 5. Roles and permissions
 
-The architecture defines four RBAC roles. This slice establishes role recognition and the central authorization mechanism. The exact per-action permission matrix for every domain feature must be specified by the relevant module slices; do not invent a complete permissions matrix here.
+S00 does not implement user-facing role permissions.
 
-| RBAC role | S01 responsibility | Boundary |
+| Actor / role | S00 interaction | Restriction |
 |---|---|---|
-| Student | Authenticate as Student; protected requests carry Student identity/role | Access to student-owned records only where applicable; no cross-student private data access |
-| Warden | Authenticate as Warden; protected requests carry Warden identity/role | Warden permissions for domain workflows are defined by the relevant module slices |
-| Kitchen Staff | Authenticate as Kitchen Staff; protected requests carry Kitchen Staff identity/role | Kitchen Staff permissions for meal workflows are defined by S09–S11 |
-| Manager | Authenticate as Manager; protected requests carry Manager identity/role | Manager permissions for complaint escalation workflows are defined by S08 |
+| Developer / team member | Uses repository setup and local development instructions | Must follow the approved architecture and avoid committing secrets. |
+| Student, Warden, Kitchen Staff, Manager | No completed product workflow in S00 | Authentication and role-specific access are implemented in S01 and later slices. |
 
-Roommate is a PRD actor involved in coordination, not a fifth RBAC role. Do not add a Roommate role.
+The four product RBAC roles remain Student, Warden, Kitchen Staff, and Manager. S00 must not introduce additional product roles.
 
 ## 6. Preconditions and dependencies
 
-- S00 project foundation is complete and approved.
-- Next.js application, TypeScript, Prisma schema, PostgreSQL configuration, shared validation/error conventions, and repository structure are available.
-- The team has access to the development database through its agreed private credential-sharing process.
-- User records can be provisioned for testing. The provisioning method must be confirmed by the team; this slice must not silently add public registration.
-- The exact login identifier and account-provisioning policy are resolved or explicitly bounded before finalizing the login interface.
-- All later protected domain slices depend on S01's authentication and authorization boundary.
+- The GitHub repository exists and the approved project documents are committed.
+- `AGENTS.md`, `Final_PRD.md`, `architecture.md`, and the five accepted ADRs are available in the repository under the canonical names.
+- The team has accepted the centralized slice planning and review process.
+- S00 is the first implementation slice and has no application-slice dependency.
+- Required local development tools and access to the project's Supabase PostgreSQL environment must be available to the implementer. Exact tool versions and credential provisioning should be recorded in the repository setup instructions after the team confirms them; do not place secrets in GitHub.
 
 ## 7. Workflow and system behavior
 
-### 7.1 Authentication workflow (provisioned account)
+S00 is a developer-facing foundation slice rather than an end-user business workflow.
 
-1. A user opens the sign-in interface/API.
-2. The user submits the agreed login identifier and password.
-3. The Auth route validates the input using Zod.
-4. The Auth service retrieves the relevant provisioned user account through the Auth repository.
-5. The submitted password is checked against the stored bcrypt password hash.
-6. If credentials are valid and the account is active, the Auth service issues a stateless JWT containing the identity and role claims required by the accepted design.
-7. The JWT is stored in an HttpOnly cookie with the approved expiry and cookie settings.
-8. Subsequent protected API requests pass through centralized middleware.
-9. Middleware verifies the token, evaluates the user ID and role claims, and applies the role and ownership boundary before Business Logic is reached.
-10. The request proceeds only if the applicable authentication and authorization checks pass.
-
-The architecture does not prescribe the exact JWT claim names, signing algorithm/library, login route, or complete request/response schema. Those must be selected and recorded during implementation review without changing the accepted stateless JWT decision.
-
-### 7.2 Logout workflow
-
-1. An authenticated user requests logout.
-2. The Auth operation clears the authentication cookie.
-3. Subsequent requests without a valid authenticated token are treated as unauthenticated.
-
-Because no blacklist or refresh-token mechanism is selected, logout clears the browser cookie; it does not revoke a separately copied token before its expiry.
-
-### 7.3 Protected request workflow
-
-1. A request reaches a protected API endpoint.
-2. Centralized middleware checks whether a valid JWT is present.
-3. Middleware verifies the JWT and extracts the authenticated user ID and role claims.
-4. Middleware checks whether the role is permitted for the protected operation.
-5. The applicable single-owner row-level access rule is enforced before the request reaches Business Logic.
-6. If checks pass, the request continues to the relevant module service.
-7. If authentication or authorization fails, the request is rejected using the standardized API error convention.
+1. A team member clones the GitHub repository.
+2. The team member follows the documented prerequisite and environment setup instructions.
+3. The team member configures local environment values using the documented `.env.example` as a guide and obtains secrets through the team's agreed private method.
+4. The team member installs project dependencies using the documented package-manager workflow.
+5. The team member can start the Next.js web application locally.
+6. The team member can start the worker as a separate local process.
+7. The team member can run the documented validation/type-check command(s).
+8. The application structure preserves the tier and module boundaries in `architecture.md`.
 
 ### State transitions
-
-Not applicable as a product-domain state machine. Authentication has token validity/expiry behavior, but the source documents do not define a separate user account lifecycle beyond `is_active`.
+Not applicable. S00 does not define a product-domain state machine.
 
 ## 8. Implementation tasks
 
-### 8.1 Presentation
+### 8.1 Repository and project setup
 
-- Provide the sign-in interaction required for the agreed login identifier and password.
-- Provide a logout interaction.
-- Do not add registration, password reset, account recovery, or other unspecified account screens without team approval.
-- Do not expose JWT values to client-side JavaScript or display them in the interface.
+- Confirm the repository root and canonical documentation filenames.
+- Establish the Next.js + TypeScript project using the approved stack.
+- Add the application files and configuration required by the selected framework.
+- Preserve the approved logical project structure in `architecture.md` §17. Adapt filenames only where required by Next.js conventions.
+- Ensure the project README explains prerequisites, local configuration, installation, and how to start the web app and worker.
+- Add `.env.example` with placeholders only. Do not commit `.env`, credentials, tokens, database passwords, or private keys.
 
-### 8.2 API / route handlers
+### 8.2 Presentation foundation
 
-- Implement Auth route handlers under the architecture's `src/app/api/auth/` area, adapting filenames to Next.js conventions.
-- Validate incoming authentication input with Zod.
-- Use the standardized API success/error response convention established in S00.
-- Keep password verification and token issuance in the Auth Business Logic service rather than embedding business logic in the route handler.
-- Do not publish final route paths or request/response contracts in this specification; record the chosen implementation-level contracts in the Auth slice/API documentation and review them.
+- Establish the Next.js application entry/layout structure.
+- Establish Tailwind CSS.
+- Establish shadcn/ui according to the selected stack.
+- Keep presentation components separate from business rules and data access.
+- Do not build detailed module screens as part of S00.
 
-### 8.3 Business logic
+### 8.3 API and shared validation foundation
 
-- Implement the Auth service under `src/business/modules/auth/`.
-- Authenticate provisioned user accounts.
-- Verify passwords against bcrypt hashes.
-- Issue and verify stateless JWTs with an eight-hour expiry.
-- Ensure authenticated identity and role are derived from verified token claims, not trusted from client-supplied identity fields.
-- Implement centralized role guards for Student, Warden, Kitchen Staff, and Manager.
-- Implement single-owner access enforcement at the protected API boundary.
-- Clear the authentication cookie on logout.
-- Do not implement refresh tokens or token blacklist.
+- Establish the Next.js Route Handler location/convention for REST endpoints.
+- Establish Zod as the request-input validation technology.
+- Establish a consistent standardized API success/error response convention.
+- Keep endpoint paths and detailed module request/response schemas out of S00 unless required for a minimal health/startup verification route and explicitly agreed by the team.
+- Do not invent a global API contract that conflicts with later module specifications.
 
-### 8.4 Data / persistence
+### 8.4 Business Logic foundation
 
-The architecture's Auth `users` table contains:
+- Establish the six approved module directories under `src/business/modules/`.
+- Establish the shared Notification Service location under `src/business/notifications/`.
+- Establish the worker location under `src/business/workers/`.
+- Keep business rules out of presentation components and data repositories.
+- Do not implement the notification service or domain workflows in this slice.
 
-| Field | Documented definition |
-|---|---|
-| `id` | UUID primary key |
-| `full_name` | Required text |
-| `email` | Required unique text |
-| `password_hash` | Required text; bcrypt hash |
-| `role` | Required role value: Student, Warden, Kitchen Staff, Manager |
-| `is_active` | Required boolean, default true |
-| `created_at`, `updated_at` | Timestamps |
+### 8.5 Data foundation
 
-Additional documented rule: accounts referenced by historical records are deactivated rather than physically deleted.
+- Establish `prisma/schema.prisma` as the single Prisma schema.
+- Establish PostgreSQL as the relational database and Supabase PostgreSQL as the selected host.
+- Establish shared database configuration/access location under `src/data/database/`.
+- Establish module-organized repository locations under `src/data/repositories/`.
+- Establish `src/data/storage/` for storage-related access boundaries.
+- Do not create final domain schemas beyond what is needed for the agreed foundation and S01. Domain schema ownership remains with each slice.
+- Record any schema/migration decision that affects other modules for review before implementation.
 
-Tasks:
-- Implement the Auth-owned user model in the single Prisma schema.
-- Implement the Auth repository under `src/data/repositories/auth/`.
-- Persist password hashes only; never plaintext passwords.
-- Preserve the documented role values and `is_active` behavior.
-- Do not add unapproved user profile fields, roles, account lifecycle states, or deletion rules.
+### 8.6 Worker foundation
 
-### 8.5 Middleware and security
+- Establish a dedicated worker entry point under `src/business/workers/`.
+- Ensure the web application and worker can be run as separate local processes, as permitted by the architecture.
+- Use Node.js and the approved node-cron technology where the baseline scheduler is established.
+- Preserve the five-minute polling decision from ADR-005.
+- Do not implement complaint escalation or responsibility reminder business logic in S00.
+- Do not let the worker directly update domain tables; future jobs must call owning module service interfaces.
+- Production worker hosting remains undecided and must not be selected by this slice.
 
-- Implement centralized authentication/RBAC middleware at the approved architecture boundary (`src/middleware.ts`, adapted to the selected Next.js conventions).
-- Verify JWT before allowing protected API operations to reach Business Logic.
-- Enforce role authorization using the four approved roles.
-- Enforce single-owner row-level privacy before Business Logic.
-- Use HttpOnly cookie storage, eight-hour expiry, `Secure` in production, and `SameSite=Lax`.
-- Apply CSRF protection to state-changing operations as required by the cookie-based authentication design.
-- Ensure logout clears the cookie.
-- Do not log passwords, password hashes, JWTs, signing secrets, or cookie values.
+### 8.7 Integration and documentation
 
-### 8.6 Integration
-
-- Publish a clear Auth service/middleware interface for protected modules to use.
-- Document how route handlers obtain verified user identity and role.
-- Ensure module slices do not create their own independent JWT verification or role systems.
-- Ensure module-specific ownership checks are compatible with the central boundary.
-- S02 and all later protected domain slices use the shared authentication boundary.
+- Document local setup and run instructions.
+- Document the available validation commands and expected outcomes.
+- Ensure the project can be started from a clean clone by following the README.
+- Record exact dependency/tool versions selected during setup in the project files; do not invent them in this specification.
+- Record implementation decisions that materially affect later slices.
 
 ## 9. Acceptance criteria
 
 | ID | Given | When | Then | Source |
 |---|---|---|---|---|
-| AC-S01-01 | A provisioned active user has a valid bcrypt password hash | The user submits valid credentials through the agreed sign-in operation | Authentication succeeds and a stateless JWT is issued | Architecture §13, §15.1, §16; ADR-003 |
-| AC-S01-02 | A user submits an incorrect password or invalid credentials | Authentication is attempted | Authentication is rejected and no authenticated cookie/session is established | Architecture §15.1, §16; security requirement |
-| AC-S01-03 | Authentication succeeds | The response is inspected | JWT is stored in an HttpOnly cookie with eight-hour expiry, `SameSite=Lax`, and `Secure` in production | Architecture §16 |
-| AC-S01-04 | A protected API request contains a valid JWT | Centralized middleware processes the request | Middleware verifies the token and obtains the authenticated user ID and role claims before Business Logic is reached | ADR-003; Architecture §5.2, §12.1 |
-| AC-S01-05 | A protected request has no token, an invalid token, or an expired token | The request is processed | The request is rejected as unauthenticated using the standardized API error convention | ADR-003; Architecture §12.1, §16 |
-| AC-S01-06 | A valid authenticated user requests an operation restricted to another role | Middleware evaluates the request | The request is rejected before the protected Business Logic operation executes | ADR-003; Architecture §5.2 |
-| AC-S01-07 | Student A is authenticated and requests a private record owned by Student B | The protected operation performs the ownership check | Access is denied; Student A cannot view Student B's private record | NFR-01; BR-04; CON-02; ADR-003 |
-| AC-S01-08 | A Student requests their own record and the operation is allowed by the relevant module | The ownership check runs | The authenticated identity is used to scope access to the Student's own record | NFR-01; BR-04; ADR-003 |
-| AC-S01-09 | An authenticated user requests logout | Logout completes | The authentication cookie is cleared; a subsequent browser request without a valid cookie is unauthenticated | Architecture §16 |
-| AC-S01-10 | The user table and repository are reviewed | A reviewer checks persisted account data | The documented user fields and four role values are represented; password storage is a bcrypt hash, not plaintext | Architecture §15.1, §16 |
-| AC-S01-11 | A state-changing request uses the cookie-based authentication design | The request passes through the applicable CSRF protection | The CSRF behavior required by the agreed design is enforced | Architecture §16 |
-| AC-S01-12 | A reviewer inspects the repository and module integration | They check authentication and authorization implementation | Protected modules use the centralized Auth boundary rather than implementing independent JWT/role systems | ADR-003; Architecture §5.2, §12.1 |
+| AC-S00-01 | A team member has cloned the repository and followed README prerequisites | They install dependencies using the documented workflow | The project installs without an undocumented manual step | Architecture §12, §17 |
+| AC-S00-02 | The project is configured locally | The developer starts the web application using the README command | The Next.js application starts locally | Architecture §12, §17 |
+| AC-S00-03 | The project is configured locally | The developer starts the worker using the README command | The worker starts as a separate local process from the web application | Architecture §14.4, §17 |
+| AC-S00-04 | The project structure is inspected | A reviewer checks tier and module organization | Presentation, Business Logic, and Data responsibilities are separated, and all six approved domain modules have their designated locations | ADR-001; Architecture §4, §5, §17 |
+| AC-S00-05 | The repository contains database configuration | A reviewer inspects the Prisma setup | There is one Prisma schema configured for the single PostgreSQL data tier; repositories are organized by module | Architecture §12, §15 |
+| AC-S00-06 | A developer submits invalid input to a validation boundary included in the foundation | The request is processed | Zod validation is used and the API returns the agreed standardized error shape | Architecture §12, §12.1 |
+| AC-S00-07 | The repository is prepared for local configuration | A reviewer inspects tracked files | `.env.example` contains placeholders only; no real credentials or secrets are committed | Architecture §16; project security practice |
+| AC-S00-08 | A new team member follows the README from a clean clone | They complete the documented setup | They can configure, install, start the web app, start the worker, and run the documented checks without relying on undocumented instructions | Architecture §17 |
+| AC-S00-09 | The codebase is reviewed | A reviewer checks cross-tier references and module access | Cross-module operations are designed to use owning module service interfaces; one module is not given direct access to another module's tables | Architecture §12.1 |
+| AC-S00-10 | A reviewer checks worker implementation | They inspect worker responsibilities | The worker foundation is separate from domain job rules and does not directly implement domain rules by updating domain tables | Architecture §13–14; ADR-005 |
 
-**Important ownership nuance:** Central middleware must establish verified identity, role authorization, and the approved single-owner access boundary. Each domain module remains responsible for applying its own record ownership/business rules through its owning service/repository. The implementation must demonstrate that the combined boundary prevents cross-student access; do not assume a generic role check alone proves row ownership.
+**Important:** S00 passing these criteria establishes the technical foundation. It does not prove NFR-02 response time or NFR-04 monthly availability. Those require system-level verification over relevant workflows and operating periods.
 
 ## 10. Test plan
 
 | Test ID | Level | Scenario | Expected result | Evidence |
 |---|---|---|---|---|
-| T-S01-01 | Unit | Verify password against a valid bcrypt hash | Correct password verifies successfully | Test output |
-| T-S01-02 | Unit | Verify password against a non-matching password | Verification fails | Test output |
-| T-S01-03 | Integration | Authenticate a provisioned active user | JWT is issued and cookie attributes match the approved settings | Redacted response/test output |
-| T-S01-04 | Integration | Authenticate with invalid credentials | Request rejected; no authenticated cookie issued | Test output |
-| T-S01-05 | Integration | Access protected endpoint without a cookie | Request rejected before business service executes | Test output |
-| T-S01-06 | Integration | Access protected endpoint with invalid/expired JWT | Request rejected | Test output |
-| T-S01-07 | Authorization | Test each of the four approved roles against the role guards used by the implemented operations | Allowed roles proceed; disallowed roles are rejected | Role matrix/test output |
-| T-S01-08 | Privacy / security | Student A attempts to access Student B's private record through a protected module operation | Access denied; no record data disclosed | Automated test and redacted response |
-| T-S01-09 | Privacy / security | Student accesses their own record through a protected module operation | Access is scoped to their own identity and permitted by the module | Automated test |
-| T-S01-10 | Integration | Logout and then call a protected endpoint using the browser's cleared cookie | Browser request is unauthenticated | Test output |
-| T-S01-11 | Security | Inspect cookie flags and token exposure | HttpOnly is set; Secure is set in production; SameSite=Lax; token is not exposed to client JavaScript | Browser/test evidence |
-| T-S01-12 | Security | Exercise state-changing cookie-authenticated requests under the agreed CSRF design | Requests meet the approved CSRF protection behavior | Test output |
-| T-S01-13 | Data | Inspect persisted test user records | Password hashes are stored; plaintext passwords are absent; role values are constrained to the four approved roles | Redacted DB/test evidence |
-| T-S01-14 | Regression | Run authentication/authorization tests with representative protected routes from integrated slices | Central boundary remains consistent across modules | Test output |
+| T-S00-01 | Setup / reproducibility | Clean clone followed by README setup | Setup completes with documented steps | Setup notes and terminal output |
+| T-S00-02 | Startup | Start web application locally | Application starts without startup error | Terminal output / screenshot |
+| T-S00-03 | Startup | Start worker independently | Worker starts as a separate process | Terminal output |
+| T-S00-04 | Static checks | Run the documented TypeScript/type-check and lint/build checks selected by the team | Checks complete successfully; any known warnings are recorded | Command output |
+| T-S00-05 | Configuration | Inspect committed environment example and repository history | No actual secrets are present in tracked files | Review record |
+| T-S00-06 | Architecture review | Inspect source directories and imports | Tier/module boundaries match the approved architecture | Reviewer checklist |
+| T-S00-07 | Database foundation | Verify Prisma schema and database connection configuration in the team's development environment | One schema and the selected PostgreSQL connection configuration are in place | Migration/connection output with secrets redacted |
+| T-S00-08 | Validation/error convention | Exercise the agreed minimal validation boundary | Invalid input is rejected through Zod and uses the standardized error response | Automated test or request/response evidence |
 
-Test credentials must be synthetic. Never include real passwords, JWTs, cookies, signing keys, or personal data in evidence.
+The team must choose exact package-manager commands and tool versions during setup and record them in the README/package files. Do not invent command output or report a test as passed until it has actually run.
 
 ## 11. Security, privacy, and failure handling
 
-- Passwords must be hashed with bcrypt; plaintext passwords must never be stored.
-- JWT must be stateless and expire after eight hours.
-- JWT must be stored in an HttpOnly cookie.
-- Set `Secure` in production and `SameSite=Lax`.
-- Apply CSRF protection to state-changing operations as required by the cookie-based authentication design.
-- Centralized middleware evaluates verified user ID and role claims before Business Logic.
-- Student access must remain limited to self-owned schedules, responsibilities, and complaints.
-- Do not trust user ID or role values supplied in request bodies, query strings, or client-controlled headers as proof of identity.
-- Do not reveal whether an account exists versus whether its password is wrong unless the team approves that behavior; the source documents do not define the exact authentication error wording.
-- Logout clears the cookie. No blacklist or refresh-token mechanism is selected; a copied JWT may remain valid until expiry.
-- Accounts referenced by historical records are deactivated rather than physically deleted.
-- Do not log passwords, password hashes, JWTs, signing secrets, or cookie values.
-- Exact JWT signing-key provisioning/rotation and CSRF implementation details are not fully prescribed in the source documents and require implementation review.
+- No secrets may be committed. `.env.example` must contain placeholders only.
+- Keep data access out of presentation components.
+- Keep business rules out of route handlers and repositories; route handlers validate and call business services.
+- Preserve module-owned repositories and service interfaces.
+- Do not create an authentication bypass as a permanent project convention. Protected operations will be guarded in S01.
+- Database connection failures must be surfaced through the project's agreed error/logging approach; exact operational monitoring is not specified by the architecture.
+- Do not log credentials, JWTs, connection strings, or other secrets.
+- Production hosting and production worker deployment remain undecided.
+- The worker must not directly update domain tables to implement domain behavior.
 
 ## 12. Evidence required
 
-- Auth specification review and team approval.
-- GitHub commits/PR showing Auth module, repository, middleware and route-handler implementation.
-- Redacted tests demonstrating successful and failed authentication.
-- Redacted evidence of cookie attributes and eight-hour expiry.
-- Tests demonstrating each approved role's guard behavior.
-- Tests demonstrating Student A cannot access Student B's private record and a student can access their own record where allowed by the module.
-- Tests showing logout clears the cookie.
-- Evidence of CSRF protection behavior for applicable state-changing requests.
-- Database evidence showing documented user fields and bcrypt hashes only (never show actual credentials).
-- Reviewer comments and any human changes to AI-generated code or design.
-- Workflow evidence log and contribution log updated with actual contributions and test outcomes.
+- GitHub repository/commit showing the foundation structure.
+- Screenshot or terminal evidence of clean setup and successful local web startup.
+- Screenshot or terminal evidence of worker starting as a separate process.
+- Evidence of documented static checks/build/type checks and their actual results.
+- Reviewer checklist confirming the architecture structure and tier/module boundaries.
+- Redacted evidence of the Prisma/PostgreSQL foundation.
+- Review comments and human decisions about any implementation choices not fully prescribed by the architecture.
+- Workflow evidence log entry showing AI-assisted work, human review, revisions/rejections where applicable, tests, and final decision.
+- Contribution log entry identifying actual work completed by the owner and reviewer.
 
 ## 13. Ownership and review
 
 - Implementer: Member 1 (provisional; confirm)
-- Reviewer: Member 3 (provisional; confirm)
+- Reviewer: Member 2 (provisional; confirm)
 - Coordinator: Abiha
 - Team approval date: Pending
 - Specification version: 0.1
 - Related branch / pull request: To be created
-- Integration contacts: S00 owner; S02 owner; all protected module owners
+- Integration contacts: S01 owner; later slice owners as needed
 
 ## 14. Open questions, risks, and decisions
 
 | ID | Question / risk | Why it matters | Owner | Blocking? | Resolution |
 |---|---|---|---|---|---|
-| OQ-S01-01 | Are user accounts provisioned by an administrator/team process, or is any self-registration allowed? | PRD/architecture do not specify account creation policy | Team | Yes for account provisioning workflow; authentication of pre-provisioned accounts can be implemented separately | Team decision required |
-| OQ-S01-02 | Is email the login identifier, or is another identifier required? | User schema contains unique email but does not explicitly define login input | Team | Yes before finalizing sign-in UI/API contract | Team decision required |
-| OQ-S01-03 | Who is authorized to create, assign roles to, deactivate, and reactivate accounts? | Prevent unauthorized privilege assignment | Team | Yes before implementing account administration | Team decision required |
-| OQ-S01-04 | What password length/complexity policy applies? | Source documents require bcrypt but do not define password policy | Team | Yes before finalizing password validation rules | Team decision required |
-| OQ-S01-05 | Which JWT signing algorithm/library and exact claim names will be used? | Required to implement interoperable token issuance/verification; not prescribed by ADR | Owner + reviewer + team | Yes before implementation is finalized | Propose for review; record decision |
-| OQ-S01-06 | How will JWT signing secrets be provisioned and rotated in local development? | Secure configuration and key management | Team | Yes before local auth can run safely | Agree private secret-sharing and configuration process |
-| OQ-S01-07 | What exact CSRF protection mechanism will be used for state-changing cookie-authenticated requests? | Architecture requires CSRF protection as applicable but does not prescribe mechanism | Owner + reviewer | Yes before affected state-changing routes are released | Technical proposal and review required |
-| OQ-S01-08 | What exact per-action permissions apply to Warden and Manager across all modules? | Auth establishes central role enforcement; module-specific permission matrix is not fully defined in S01 source | Relevant module owners + team | No for core identity mechanism; yes before each affected module action is implemented | Define within each module slice and keep consistent |
-| OQ-S01-09 | How should deactivated users' existing JWTs behave before their eight-hour expiry? | Stateless JWT may remain valid until expiry; source does not define active-status recheck behavior | Team | Yes before finalizing deactivation/security behavior | Team decision required |
-| OQ-S01-10 | What exact API error codes/messages are used for unauthenticated and unauthorized requests? | Must match S00 standardized response convention, whose detailed shape needs team approval | Coordinator + team | Yes before API contract is finalized | Resolve jointly with S00 |
+| OQ-S00-01 | Which exact Node.js and package-manager versions will the team standardize on? | Reproducible setup across five developers | Owner + team | Yes for final setup instructions | Pending team agreement; record actual chosen versions |
+| OQ-S00-02 | What exact local environment variable names are required for database connectivity and later authentication? | `.env.example` and local setup | Owner + S01 owner | No for initial scaffold; yes before dependent features run | Derive from implemented configuration and document; never invent secrets |
+| OQ-S00-03 | What is the agreed private process for sharing development Supabase credentials? | Prevent secret leakage | Team | Yes before connecting a developer environment | Team decision required |
+| OQ-S00-04 | Which minimal baseline route/check, if any, will be used to verify the app is running? | Avoid adding an unapproved API contract | Owner + reviewer | No | Keep minimal and document if introduced |
+| OQ-S00-05 | What exact standardized API error response shape will the project use? | Architecture requires consistency but does not define the full shape | Coordinator + team | Yes before shared API convention is finalized | Propose a shape for team review; do not treat as approved until accepted |
+| OQ-S00-06 | Which exact worker startup command/process convention will be used? | Web app and worker must run separately | Owner + team | Yes before S00 completion | Implement and document a reproducible local process |
+| OQ-S00-07 | Production hosting and worker monitoring/alerting are undecided | Production deployment cannot be finalized in S00 | Team | No for local deliverable | Keep explicitly undecided |
 
 ## 15. Definition of Done
 
-- [ ] Auth module follows the approved architecture boundaries.
-- [ ] User persistence matches the documented Auth schema fields and four roles.
-- [ ] Passwords are stored as bcrypt hashes only.
-- [ ] Stateless JWT authentication uses the approved eight-hour expiry.
-- [ ] JWT is stored in an HttpOnly cookie with approved cookie settings.
-- [ ] Centralized middleware verifies identity and role claims before protected Business Logic.
-- [ ] Centralized role guards recognize Student, Warden, Kitchen Staff, and Manager.
-- [ ] Single-owner privacy is demonstrated through integrated protected-resource tests.
-- [ ] Logout clears the authentication cookie.
-- [ ] Applicable CSRF protection is implemented and tested.
-- [ ] No unapproved registration, password reset, refresh token, blacklist, or extra role has been added.
-- [ ] Relevant unit, integration, authorization, privacy, and security tests pass; results are recorded.
-- [ ] No unresolved blocking question remains for the implemented scope.
-- [ ] Code has been reviewed by the assigned reviewer.
+- [ ] All included foundation tasks are implemented within the approved scope.
+- [ ] Approved project structure preserves the three tiers and six domain module boundaries.
+- [ ] Approved technology stack is represented in project configuration.
+- [ ] One Prisma schema is established for the central PostgreSQL data tier.
+- [ ] Local web application startup is verified.
+- [ ] Separate local worker startup is verified.
+- [ ] Zod validation and standardized API error convention are established at the agreed foundation boundary.
+- [ ] README setup instructions are tested from a clean clone.
+- [ ] `.env.example` contains placeholders only and no secrets are committed.
+- [ ] Relevant tests/checks are run and actual results recorded.
+- [ ] No unresolved blocking question remains.
+- [ ] Reviewer has checked architecture boundaries and implementation.
 - [ ] Workflow evidence log and contribution log are updated.
 - [ ] Coordinator has reviewed the completion evidence.
 - [ ] `SLICE_REGISTER.md` status is updated.
