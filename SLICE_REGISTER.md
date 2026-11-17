@@ -3,7 +3,7 @@
 **Document status:** Initial planning baseline  
 **Register owner / Slice Coordinator:** Abiha (team coordinator)  
 **Team labels:** Member 1–5 (replace with actual names after the team confirms assignments)  
-**Last updated:** 15 November 2026
+**Last updated:** 16 November 2026
 
 ## 1. Purpose
 
@@ -45,7 +45,7 @@ The owners below are the **provisional allocation** from the project plan. Confi
 
 | ID | Slice | Main scope | Requirement traceability (planning level) | Dependencies | Proposed owner | Proposed reviewer | Priority | Status |
 |---|---|---|---|---|---|---|---|---|
-| S00 | Project Foundation | Repository/application foundation, shared conventions, local setup, baseline integration and developer documentation | Architecture baseline; project-wide NFRs and constraints | None | Member 1 | Member 2 | P0 | Specification Draft |
+| S00 | Project Foundation | Repository/application foundation, shared conventions, local setup, baseline integration and developer documentation | Architecture baseline; project-wide NFRs and constraints | None | Khadija Tul Kubra | abihajibbran1-lang | P0 | Testing |
 | S01 | Authentication and RBAC | Sign-in/authentication boundary, role enforcement, authenticated identity and ownership checks | NFR-01; BR-01, BR-04; CON-02; architecture auth/security decisions; ADR-003 | S00 | Member 1 | Member 3 | P0 | Specification Draft |
 | S02 | Shared Notification Service and Inbox | Shared in-app notification capability and notification inbox/dispatch boundary used by modules | FR-03, FR-04, FR-05; FR-02 assistance notification; FR-10/FR-11 escalation notifications where specified; architecture shared capability and worker decisions | S00, S01 | Member 2 | Member 1 | P1 | Planned |
 | S03 | Personal Schedule Management | Student create/view/update own daily schedule | FR-01; NFR-01, NFR-02; BR-04 | S01; shared notification integration as needed | Member 2 | Member 4 | P1 | Planned |
@@ -154,6 +154,7 @@ A slice may move to **Complete** only when:
 | Date | Change | Updated by |
 |---|---|---|
 | 15 Nov 2026 | Initial centralized register and proposed 15-slice inventory created from the project planning baseline. | Slice Coordinator |
+| 16 Nov 2026 | S00 implementation started on `s00-project-foundation`; owner and reviewer confirmed. Foundation is in testing pending clean-clone/database verification and reviewer/coordinator acceptance. | Khadija Tul Kubra |
 
 
 ## 10. Specification drafting update — 15 Nov 2026
