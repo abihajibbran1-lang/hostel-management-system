@@ -1,14 +1,15 @@
 # S00 — Project Foundation
 
-**Status:** Specification Draft — team review required  
-**Owner:** Member 1 (provisional; confirm actual name)  
-**Reviewer:** Member 2 (provisional; confirm actual name)  
+**Status:** Testing — reviewer and coordinator acceptance pending
+**Owner:** Khadija Tul Kubra
+**Current implementation status:** Testing (reviewer and coordinator acceptance pending)
+**Reviewer:** abihajibbran1-lang
 **Coordinator:** Abiha  
 **Priority:** P0 (proposed in the Slice Register)  
 **Target wave:** Wave 1 — Foundation  
 **Estimated effort:** To be estimated by the owner after review  
 **Specification version:** 0.1  
-**Last updated:** 15 November 2026
+**Last updated:** 16 November 2026
 
 ## 1. Purpose and outcome
 
@@ -268,12 +269,12 @@ The team must choose exact package-manager commands and tool versions during set
 
 ## 13. Ownership and review
 
-- Implementer: Member 1 (provisional; confirm)
-- Reviewer: Member 2 (provisional; confirm)
+- Implementer: Khadija Tul Kubra
+- Reviewer: abihajibbran1-lang
 - Coordinator: Abiha
 - Team approval date: Pending
 - Specification version: 0.1
-- Related branch / pull request: To be created
+- Related branch / pull request: `s00-project-foundation` / PR not yet opened (push withheld until local tests completed)
 - Integration contacts: S01 owner; later slice owners as needed
 
 ## 14. Open questions, risks, and decisions
@@ -311,4 +312,5 @@ The team must choose exact package-manager commands and tool versions during set
 | Version | Date | Prepared by | Reviewed by | Team decision | Notes |
 |---|---|---|---|---|---|
 | 0.1 | 15 Nov 2026 | Slice Coordinator | Pending | Specification Draft | Not approved for implementation yet |
+| 0.2 | 16 Nov 2026 | Khadija Tul Kubra | Pending | Testing | Implementation began following owner instruction; peer review and coordinator acceptance remain pending. |
 
