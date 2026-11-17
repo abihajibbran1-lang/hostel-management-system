@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from "next/server.js";
 import { ZodError } from "zod";
 
 export type ApiErrorCode = "VALIDATION_ERROR" | "INTERNAL_ERROR";
