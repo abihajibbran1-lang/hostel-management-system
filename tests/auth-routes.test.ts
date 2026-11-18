@@ -9,8 +9,8 @@ import {
   getAuthenticationCookieOptions,
   setAuthenticationCookie,
 } from "../src/business/modules/auth/auth-cookie.ts";
-import { createLoginHandler } from "../src/app/api/auth/login/route.ts";
-import { createLogoutHandler } from "../src/app/api/auth/logout/route.ts";
+import { createLoginHandler } from "../src/app/api/auth/login/login-handler.ts";
+import { createLogoutHandler } from "../src/app/api/auth/logout/logout-handler.ts";
 import { validateRequestOrigin } from "../src/shared/security/origin-validation.ts";
 
 const user = {

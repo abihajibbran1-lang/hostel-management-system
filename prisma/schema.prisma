@@ -15,14 +15,33 @@ enum UserRole {
 }
 
 model User {
-  id           String   @id @default(uuid()) @db.Uuid
-  fullName     String   @map("full_name")
-  email        String   @unique
-  passwordHash String   @map("password_hash")
-  role         UserRole
-  isActive     Boolean  @default(true) @map("is_active")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id            String         @id @default(uuid()) @db.Uuid
+  fullName      String         @map("full_name")
+  email         String         @unique
+  passwordHash  String         @map("password_hash")
+  role          UserRole
+  isActive      Boolean        @default(true) @map("is_active")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  notifications Notification[]
 
   @@map("users")
+}
+
+model Notification {
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @map("user_id") @db.Uuid
+  type             String
+  title            String
+  message          String
+  relatedModule    String    @map("related_module")
+  relatedEntityId  String    @map("related_entity_id")
+  isRead           Boolean   @default(false) @map("is_read")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  readAt           DateTime? @map("read_at")
+  deduplicationKey String    @unique @map("deduplication_key")
+  user             User      @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+  @@map("notifications")
 }

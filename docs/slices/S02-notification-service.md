@@ -1,6 +1,6 @@
 # S02 — Shared Notification Service and Inbox
 
-**Status:** Ready for implementation after dependencies | **Provisional owner:** Member 2 (confirm with team) | **Reviewer:** Member 1 (confirm with team) | **Priority:** P1 | **Estimate:** Not yet recorded
+**Status:** In Progress | **Provisional owner:** Khadija Tul Kubra | **Reviewer:** abihajibbran1-lang | **Priority:** P1 | **Estimate:** Not yet recorded
 
 ## 1. Goal and traceability
 
@@ -42,16 +42,16 @@ S10 owns the FR-05 confirmation ticket. S02 must not represent that ticket as a 
 
 Use the approved `notifications` table owned by S02: `id` UUID primary key; `user_id` FK to `users.id`; required `type`; `title`; `message`; `related_module`; `related_entity_id`; `is_read` default false; `created_at`; nullable `read_at`; and unique `deduplication_key`.
 
-**Working implementation defaults (owner-directed; not a formal project-wide approval):**
+**Approved S02 decisions:**
 
 - Supported validated string types are `schedule_activity`, `responsibility_reminder`, `responsibility_incomplete`, `responsibility_assistance`, `meal_reservation`, `meal_collection_difficulty`, and `complaint_escalation`. A domain module may request only the type applicable to its approved workflow; adding a type requires specification review.
-- A creation request requires recipient user ID, supported type, title, message, related module, related entity ID, and deterministic deduplication key. The service returns the created notification, or the existing notification for the same deduplication key when a duplicate is detected.
+- A creation request requires recipient user ID, supported type, a trimmed title of 1–200 characters, a trimmed message of 1–2,000 characters, related module, related entity ID, and deterministic deduplication key. The service returns the created notification, or the existing notification for the same deduplication key when a duplicate is detected.
 - The deduplication key is required and deterministic for the domain event/recipient combination. The database unique constraint is the authoritative duplicate-prevention boundary.
-- `GET /api/notifications?limit=<1..100>&cursor=<notification-id>` is the working inbox endpoint. It returns only the authenticated recipient's notifications, newest `created_at` first. The default limit is 20; cursor pagination and response fields must be documented with the route when implemented.
+- `GET /api/notifications?limit=<1..100>&cursor=<opaque-cursor>` is the inbox endpoint. It returns only the authenticated recipient's notifications, newest `created_at` first. The default limit is 20. A cursor is an opaque continuation token: clients must pass it unchanged and must not rely on its internal encoding.
 - `PATCH /api/notifications/:id/read` is the working individual read-state endpoint. It derives recipient identity from S01, marks only the recipient's notification as read, and is idempotent: repeating it leaves the notification read and preserves the original `read_at` value.
-- No public creation route exists. Domain services call the shared Notification Service directly through the approved dispatch interface.
+- No public creation route exists. Domain services call the shared Notification Service directly through the approved dispatch interface; they must not write the `notifications` table directly.
 
-Route handlers use Zod for query, parameter, and body validation; use S00 standardized API success/error responses; and enforce S01 authentication, active-account, and recipient-ownership checks. Invalid input must not write data. Protected state-changing routes follow the approved S01 Origin/CSRF policy. Exact response schemas, notification text limits, and `related_entity_id` format remain recorded risks below.
+Route handlers use Zod for query, parameter, and body validation; use S00 standardized API success/error responses; and enforce S01 authentication, active-account, and recipient-ownership checks. Invalid input must not write data. Protected state-changing routes follow the approved S01 Origin/CSRF policy. The exact `related_entity_id` representation and validation rules for `related_module` remain risks below.
 
 ## 5. User flow
 
@@ -78,11 +78,11 @@ Route handlers use Zod for query, parameter, and body validation; use S00 standa
 
 - **AC-S02-01:** A valid request from an approved domain-service integration creates an in-app notification containing only the approved S02 data fields.
 - **AC-S02-02:** Repeated or concurrent requests using the same deduplication key create exactly one notification and return that created/existing notification according to the working contract.
-- **AC-S02-03:** An authenticated active recipient retrieves only their own inbox entries, newest first, using the approved limit/cursor contract.
+- **AC-S02-03:** An authenticated active recipient retrieves only their own inbox entries, newest first, using the approved limit/opaque-cursor contract.
 - **AC-S02-04:** Student A cannot retrieve, read, or infer the existence of Student B's notification through manipulated identifiers, query values, or UI state.
 - **AC-S02-05:** A recipient marks only their own individual notification as read; repeated mark-as-read requests are idempotent and preserve the original read timestamp.
 - **AC-S02-06:** The dedicated Notifications page/list shows the recipient's title, message, timestamp, and read/unread state, with an individual mark-as-read action and clear empty/loading/error states. A bell/badge is not required.
-- **AC-S02-07:** Missing or malformed parameters/bodies, unsupported notification types, unauthenticated/inactive users, cross-origin state changes, and forbidden requests fail safely without persistence or read-state changes.
+- **AC-S02-07:** Missing or malformed parameters/bodies, over-limit title/message content, unsupported notification types, unauthenticated/inactive users, cross-origin state changes, and forbidden requests fail safely without persistence or read-state changes.
 - **AC-S02-08:** Domain modules use the shared dispatch interface and do not directly write the `notifications` table.
 - **AC-S02-09:** S04 assistance integration produces one deduplicated Warden notification once S04 is implemented; S02 does not claim S04 business behavior before that integration test exists.
 - **AC-S02-10:** S02 does not create, own, or claim the S10 meal confirmation ticket unless an approved integration contract changes that boundary.
@@ -100,19 +100,29 @@ Route handlers use Zod for query, parameter, and body validation; use S00 standa
 
 **Evidence to log:** branch/commit/PR link; AI prompts and human decisions; migration and redacted database verification; exact commands and results; API examples; inbox screenshots without secrets; duplicate/concurrency evidence; cross-user denial evidence; integration-contract evidence; known limitations. Update `docs/WORKFLOW_EVIDENCE_LOG.md` and `docs/GROUP_CONTRIBUTION_LOG.md` through the eventual PR.
 
-## 9. Risks and decisions requiring confirmation
+## 9. Approved decisions, risks, and remaining confirmation
 
-1. Notification title/message length, trimming, localization, and content-redaction rules.
-2. Exact `related_entity_id` representation for polymorphic domain records and validation rules for `related_module`.
-3. Final route response schemas and cursor encoding, while preserving the working endpoint paths and limits unless review changes them.
-4. Whether any future approved staff workflow may view another user's notifications; default is recipient-only.
-5. Whether retention, archival, deletion, unread reversal, bulk read, bell/badge, or alternative inbox presentation is added later; default is no automatic deletion, individual read only, and a dedicated page/list.
-6. The final S03/S04/S05/S08/S10 request contracts and their synthetic integration fixtures.
-7. Reliability boundary when notification persistence fails: the working default is no partial notification and a standardized failure returned to the caller. The caller must not claim delivery; S02 performs no automatic retry/outbox processing unless a reviewed mechanism is approved.
-8. ADR-005 governs domain-owned worker polling, retries, `worker_job_runs`, locking, and restart recovery. It does not make those records S02-owned or assign worker retry/job ownership to S02.
-9. Provisional owner/reviewer, estimate, and formal specification review/approval remain to be confirmed through the project process.
+**Approved S02 decisions:**
 
-**Definition of done:** all applicable acceptance criteria pass; approved database migration and redacted connection verification run; service/repository/routes/page preserve tier and ownership boundaries; recipient privacy and cross-user isolation are verified; deduplication and read-state behavior are proven; approved consuming-slice contracts are tested; actual evidence is recorded; reviewer and coordinator accept completion evidence; and `SLICE_REGISTER.md` is updated. S02 is not complete merely because this specification is implementation-ready.
+1. S02 has no automatic notification deletion. Retention and cleanup require a separately approved policy.
+2. Title and message limits are 200 and 2,000 characters respectively, enforced at the dispatch validation boundary. Localization and content-redaction rules remain subject to the owning domain contract.
+3. Inbox pagination uses an opaque cursor; clients must not depend on its encoding. Retrieval remains newest first and recipient scoped.
+4. Every authenticated user may access only their own inbox. S02 introduces no staff cross-user visibility or administrative inbox.
+5. Read state is an individual, idempotent mark-as-read operation only. S02 has no bulk-read endpoint or unread reversal.
+6. A dedicated Notifications page/list is required. Bell, badge, and dropdown presentation are optional.
+7. Future domain slices must request notifications through the shared Notification Service/dispatch contract and must not write the table directly.
+8. Retry scheduling, worker execution, and `worker_job_runs` remain with the domain slices that own those workers. S02 introduces no notification worker and owns none of their business rules.
+9. S10 owns meal confirmation tickets and meal-reservation business rules. S02 creates notifications only when S10 explicitly calls the shared service.
+10. The S02 migration remains incremental. S02 does not invent an S01 baseline migration or claim fresh-database bootstrap. The team must approve a baseline/deployment strategy before applying the migration to a fresh database.
+
+**Remaining confirmation:**
+
+1. Exact `related_entity_id` representation for polymorphic domain records and validation rules for `related_module`.
+2. The final S03/S04/S05/S08/S10 request contracts and their synthetic integration fixtures.
+3. Reliability boundary when notification persistence fails: the implementation returns a standardized failure and does not claim delivery. No automatic retry/outbox processing exists unless a reviewed mechanism is approved.
+4. Formal reviewer/coordinator acceptance and the unrecorded estimate.
+
+**Definition of done:** all applicable acceptance criteria pass; an approved baseline/deployment strategy and redacted database connection verification allow the incremental migration to run; service/repository/routes/page preserve tier and ownership boundaries; recipient privacy and cross-user isolation are verified; deduplication and read-state behavior are proven; approved consuming-slice contracts are tested; actual evidence is recorded; reviewer and coordinator accept completion evidence; and `SLICE_REGISTER.md` is updated. S02 is not complete merely because its implementation is ready for review.
 
 ## Source references
 
