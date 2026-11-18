@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server.js";
 import { ZodError } from "zod";
 
-export type ApiErrorCode = "VALIDATION_ERROR" | "INTERNAL_ERROR";
+export type ApiErrorCode =
+  | "VALIDATION_ERROR"
+  | "AUTHENTICATION_FAILED"
+  | "FORBIDDEN"
+  | "INTERNAL_ERROR";
 
 export type ApiError = {
   error: {
@@ -28,6 +32,28 @@ export function apiValidationError(error: ZodError) {
   };
 
   return NextResponse.json(body, { status: 400 });
+}
+
+export function apiAuthenticationFailed() {
+  const body: ApiError = {
+    error: {
+      code: "AUTHENTICATION_FAILED",
+      message: "Authentication failed.",
+    },
+  };
+
+  return NextResponse.json(body, { status: 401 });
+}
+
+export function apiForbidden() {
+  const body: ApiError = {
+    error: {
+      code: "FORBIDDEN",
+      message: "Request is not allowed.",
+    },
+  };
+
+  return NextResponse.json(body, { status: 403 });
 }
 
 export function apiInternalError() {

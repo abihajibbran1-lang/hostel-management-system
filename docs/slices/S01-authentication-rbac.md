@@ -169,6 +169,14 @@ Not applicable as a product-domain state machine. Authentication has token valid
 - Keep password verification and token issuance in the Auth Business Logic service rather than embedding business logic in the route handler.
 - Do not publish final route paths or request/response contracts in this specification; record the chosen implementation-level contracts in the Auth slice/API documentation and review them.
 
+#### Implemented route contract (pending review)
+
+- `POST /api/auth/login` accepts JSON `email` and `password`. It validates the request with Zod, authenticates only provisioned active accounts, returns the shared API success envelope without a token value, and sets the `auth_token` HttpOnly cookie.
+- Invalid credentials and inactive accounts receive the same generic standardized authentication-failure response and no authentication cookie.
+- `POST /api/auth/logout` clears the `auth_token` cookie using matching path, HttpOnly, SameSite, and production-Secure attributes.
+- Login and logout are POST-only. No state-changing GET endpoint is implemented.
+- Login and logout check the reusable Origin validator. They allow same-origin requests and reject cross-origin and missing-Origin requests with the standardized 403 response.
+
 ### 8.3 Business logic
 
 - Implement the Auth service under `src/business/modules/auth/`.
@@ -214,6 +222,14 @@ Tasks:
 - Apply CSRF protection to state-changing operations as required by the cookie-based authentication design.
 - Ensure logout clears the cookie.
 - Do not log passwords, password hashes, JWTs, signing secrets, or cookie values.
+
+#### Implemented middleware boundary (pending review)
+
+- `src/middleware.ts` runs with the Next.js Node.js middleware runtime so it can use the Auth repository for the required current-account active-status check.
+- It matches `/api/:path*`, leaves `POST /api/auth/login` public, and lets `POST /api/auth/logout` reach its cookie-clearing handler regardless of cookie validity. It does not match pages, `_next` assets, or other framework resources.
+- For protected API requests, it reads `auth_token`, verifies it through the central JwtService, then calls the Auth repository `isActive` method on every request. Missing, malformed, tampered, expired, or inactive-account requests receive the standardized unauthenticated response.
+- Only after verified token and active-account checks succeed does it overwrite the internal `x-auth-user-id` and `x-auth-role` request headers passed to downstream protected handlers.
+- Reusable role guards centralize the four `UserRole` values and return the standardized forbidden response for an authenticated role that is not allowed. No route-to-role permission map is defined in S01; consuming slices must supply their approved permission requirements.
 
 ### 8.6 Integration
 
@@ -307,16 +323,29 @@ Test credentials must be synthetic. Never include real passwords, JWTs, cookies,
 
 | ID | Question / risk | Why it matters | Owner | Blocking? | Resolution |
 |---|---|---|---|---|---|
-| OQ-S01-01 | Are user accounts provisioned by an administrator/team process, or is any self-registration allowed? | PRD/architecture do not specify account creation policy | Team | Yes for account provisioning workflow; authentication of pre-provisioned accounts can be implemented separately | Team decision required |
-| OQ-S01-02 | Is email the login identifier, or is another identifier required? | User schema contains unique email but does not explicitly define login input | Team | Yes before finalizing sign-in UI/API contract | Team decision required |
+| OQ-S01-01 | Are user accounts provisioned by an administrator/team process, or is any self-registration allowed? | Approved scope: accounts use controlled provisioning; public registration is not allowed in S01. The responsible provisioning workflow remains out of scope. | Team | No for S01 authentication | Do not add registration or an admin provisioning API |
+| OQ-S01-02 | Is email the login identifier, or is another identifier required? | Approved decision: email is the sign-in identifier. | Team | No | Use the unique User email field for login |
 | OQ-S01-03 | Who is authorized to create, assign roles to, deactivate, and reactivate accounts? | Prevent unauthorized privilege assignment | Team | Yes before implementing account administration | Team decision required |
-| OQ-S01-04 | What password length/complexity policy applies? | Source documents require bcrypt but do not define password policy | Team | Yes before finalizing password validation rules | Team decision required |
-| OQ-S01-05 | Which JWT signing algorithm/library and exact claim names will be used? | Required to implement interoperable token issuance/verification; not prescribed by ADR | Owner + reviewer + team | Yes before implementation is finalized | Propose for review; record decision |
-| OQ-S01-06 | How will JWT signing secrets be provisioned and rotated in local development? | Secure configuration and key management | Team | Yes before local auth can run safely | Agree private secret-sharing and configuration process |
-| OQ-S01-07 | What exact CSRF protection mechanism will be used for state-changing cookie-authenticated requests? | Architecture requires CSRF protection as applicable but does not prescribe mechanism | Owner + reviewer | Yes before affected state-changing routes are released | Technical proposal and review required |
-| OQ-S01-08 | What exact per-action permissions apply to Warden and Manager across all modules? | Auth establishes central role enforcement; module-specific permission matrix is not fully defined in S01 source | Relevant module owners + team | No for core identity mechanism; yes before each affected module action is implemented | Define within each module slice and keep consistent |
-| OQ-S01-09 | How should deactivated users' existing JWTs behave before their eight-hour expiry? | Stateless JWT may remain valid until expiry; source does not define active-status recheck behavior | Team | Yes before finalizing deactivation/security behavior | Team decision required |
-| OQ-S01-10 | What exact API error codes/messages are used for unauthenticated and unauthorized requests? | Must match S00 standardized response convention, whose detailed shape needs team approval | Coordinator + team | Yes before API contract is finalized | Resolve jointly with S00 |
+| OQ-S01-04 | What password length/complexity policy applies? | Approved input policy: minimum 8 characters and maximum 72 UTF-8 bytes. No additional complexity rule is approved. | Team | No | Enforce only the approved input policy |
+| OQ-S01-05 | Which exact JWT claim names and additional validation requirements will be used? | Approved contract: HS256 protected header; `sub` is the required canonical UUID user ID; `role` is one of the four `UserRole` values; `exp` is required and set to eight hours. No issuer, audience, refresh token, or optional claims are included. | Owner + reviewer + team | No | Implement and test the approved minimum claim contract |
+| OQ-S01-06 | How will JWT signing secrets be provisioned and rotated in local development? | `JWT_SECRET` is required from private environment configuration and must be at least 32 UTF-8 bytes; missing, empty, or weak values are rejected. Secret provisioning access and rotation process remain undecided. | Team | Yes before local auth can run safely | Agree private secret-sharing, access-control, and rotation process without committing secrets |
+| OQ-S01-07 | What exact CSRF protection mechanism will be used for state-changing cookie-authenticated requests? | Approved behavior: reusable Origin validation allows same-origin requests and rejects cross-origin and missing-Origin login/logout requests with 403. | Owner + reviewer | No for implemented login/logout routes | Apply the approved Origin policy to later state-changing routes |
+| OQ-S01-08 | What exact per-action permissions apply to Warden and Manager across all modules? | Auth provides centralized reusable role guards, but module-specific permission mapping is not defined in S01. | Relevant module owners + team | No for core identity mechanism; yes before each affected module action is implemented | Define and test permissions within each module slice; do not add an S01 route-to-role map |
+| OQ-S01-09 | How should deactivated users' existing JWTs behave before their eight-hour expiry? | Approved behavior is implemented: every protected API request checks the user's current active status through the Auth repository, so a deactivated account is denied even if its JWT has not expired. | Team | No | Preserve this check in the centralized middleware boundary |
+| OQ-S01-10 | What exact API error codes/messages are used for unauthenticated and unauthorized requests? | The existing S00 standardized API response conventions are approved; login failures must use a generic message that does not reveal whether an email exists | Coordinator + team | No | Reuse the existing convention and verify generic login-failure behavior |
+| OQ-S01-11 | What bcrypt work factor applies to provisioned production account hashes? | Current Auth code verifies existing bcrypt hashes only. The non-secret dummy hash uses cost 12 for missing/inactive-account comparison timing, while tests use cost 10 synthetic hashes to keep the test suite fast. No production provisioning/hash-creation work factor is selected in S01. | Team | Yes before controlled account provisioning creates production accounts | Record the provisioning work-factor policy separately; do not treat the test or dummy-hash cost as that policy |
+| OQ-S01-12 | How should a state-changing request with no `Origin` header be handled? | Approved behavior: login and logout reject a missing Origin header with the standardized 403 response; same-origin is allowed and cross-origin is rejected. | Team | No | Apply the approved Origin policy consistently to later state-changing routes |
+
+### 14.1 HTL implementation checkpoint — details still requiring recorded approval
+
+This checkpoint records only unresolved details. It does not approve an additional security policy, API contract, or domain workflow.
+
+| Item | Current recorded position | Required approval/evidence before completion |
+|---|---|---|
+| JWT claim names | `jose`, HS256, and eight-hour expiry are approved working decisions. The minimum contract is `sub` (canonical UUID user ID), `role` (one of the four `UserRole` values), and `exp` (eight-hour expiry). The protected header is HS256. Issuer, audience, refresh-token, and optional claims are intentionally absent. | Token helpers must reject missing/invalid `sub`, missing/invalid `role`, expired tokens, malformed tokens, and tokens not using HS256. |
+| JWT secret management and rotation | `JWT_SECRET` is read only from private environment configuration. Missing, empty, and values shorter than 32 UTF-8 bytes are rejected; the placeholder contains no usable secret. No delivery, access-control, rotation, or recovery procedure is recorded here. | Team records the local and production secret-provisioning process, access control, rotation trigger/procedure, and recovery handling. Live configuration evidence must remain redacted. |
+| Ownership-test integration contract | Auth establishes verified identity and provides the central authorization boundary; the owning domain module remains responsible for its private-record repository/service rule. S01 must not create an S02-or-later business endpoint merely to demonstrate ownership. | S01 reviewer and the selected protected-module owner approve a test contract that states the trusted authenticated identity input, protected record owner identifier, allowed/denied results, and synthetic test fixture. The completed test must prove Student A is denied Student B's record and may access an allowed own record. |
+| S01 specification and reviewer approval | The detailed specification currently lists provisional implementer/reviewer assignments and a pending team approval date. Creating a feature branch does not change the slice status or constitute specification approval. | Record the confirmed implementer, reviewer, specification approval, review comments, and coordinator acceptance in the prescribed project records before marking S01 Complete. |
 
 ## 15. Definition of Done
 

@@ -21,6 +21,19 @@ test("parseJsonBody rejects an invalid request body through Zod", async () => {
   }
 });
 
+test("parseJsonBody rejects malformed JSON through Zod", async () => {
+  const request = new Request("http://localhost/test", {
+    method: "POST",
+    body: "{",
+    headers: { "content-type": "application/json" },
+  });
+  const schema = z.object({ name: z.string().min(1) });
+
+  const result = await parseJsonBody(request, schema);
+
+  assert.equal(result.success, false);
+});
+
 test("apiValidationError returns the standardized Zod validation response", async () => {
   const schema = z.object({ name: z.string().min(1) });
   const result = schema.safeParse({ name: "" });
