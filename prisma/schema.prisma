@@ -24,8 +24,25 @@ model User {
   createdAt     DateTime       @default(now()) @map("created_at")
   updatedAt     DateTime       @updatedAt @map("updated_at")
   notifications Notification[]
+  personalSchedules  PersonalSchedule[]
 
   @@map("users")
+}
+
+model PersonalSchedule {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  title          String
+  description    String?
+  startAt        DateTime @map("start_at")
+  endAt          DateTime @map("end_at")
+  recurrenceRule String?  @map("recurrence_rule")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  user           User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, startAt])
+  @@map("personal_schedules")
 }
 
 model Notification {

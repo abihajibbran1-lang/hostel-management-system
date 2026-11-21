@@ -5,6 +5,7 @@ export type ApiErrorCode =
   | "VALIDATION_ERROR"
   | "AUTHENTICATION_FAILED"
   | "FORBIDDEN"
+  | "NOT_FOUND"
   | "INTERNAL_ERROR";
 
 export type ApiError = {
@@ -54,6 +55,17 @@ export function apiForbidden() {
   };
 
   return NextResponse.json(body, { status: 403 });
+}
+
+export function apiNotFound() {
+  const body: ApiError = {
+    error: {
+      code: "NOT_FOUND",
+      message: "Resource not found.",
+    },
+  };
+
+  return NextResponse.json(body, { status: 404 });
 }
 
 export function apiInternalError() {

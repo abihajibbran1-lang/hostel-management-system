@@ -5,7 +5,7 @@
 **Target:** Complete feature implementation by the end of Day 9, preferably by Day 7–8; reserve Days 10–12 for stabilization, testing, documentation, and demonstration preparation.  
 **Team:** Five members, temporarily identified as Member 1–5  
 **Source of truth:** `Final_PRD.md`, `architecture.md`, `AGENTS.md`, and the five accepted ADRs.  
-**Last planning update:** 15 November 2026
+**Last planning update:** 21 November 2026
 
 ---
 
@@ -260,6 +260,12 @@ This is a capacity-aware starting proposal, not a guarantee. Adjust it after the
 
 **Scheduling rule:** Do not use Days 10–12 as planned feature-development days. They are reserved for stabilization and delivery. If a P1 slice is at risk, raise it early and agree on a recovery plan; do not silently remove it from scope.
 
+### 9.1 Current execution status — 21 November 2026
+
+**S03 Personal Schedule Management — Testing checkpoint.** The implementation and local verification are recorded; S03 is not complete or accepted. The local checks passed: 86 tests, typecheck, lint, build, Prisma schema validation with a placeholder database URL, and `git diff --check`. No migration was applied and no PostgreSQL integration or browser end-to-end verification was performed. NFR-02 response-time measurement, the S02/S05 reminder-interface agreement, and assigned reviewer/coordinator review and acceptance remain outstanding. The agreed `Asia/Karachi` timezone, allowed overlapping activities, deferred recurrence behavior, and reminder-delivery boundary are recorded in the S03 specification and workflow evidence log.
+
+This checkpoint records actual execution without changing the proposed slice dependencies, order, or 12-day schedule above.
+
 ## 10. Definition of Ready (Before a Slice Starts)
 
 A slice may start when:
@@ -345,6 +351,8 @@ The repository owner must invite the other team members and assign appropriate G
 | Version | Date | Change |
 |---|---|---|
 | v0.1 | 15 Nov 2026 | Initial planning draft: product scope, slice register, dependencies, provisional ownership, 12-day schedule, validation gates, and open decisions. Recorded 18-hour Warden inactivity interpretation as pending team discussion. |
+| v0.2 | 21 Nov 2026 | Recorded S03 implementation and local verification checkpoint. S03 is in Testing, not Complete. The local checks passed; PostgreSQL integration, browser end-to-end testing, NFR-02 measurement, S02/S05 reminder-interface agreement, and reviewer/coordinator acceptance remain pending. |
+| v0.3 | 21 Nov 2026 | Added a current execution-status checkpoint for S03 and updated the planning timestamp. Preserved the existing project scope, dependencies, and sequencing; S03 remains in Testing pending integration, performance measurement, and review/acceptance. |
 
 ---
 
