@@ -102,6 +102,19 @@ Route handlers use Zod for query, parameter, and body validation; use S00 standa
 
 ## 9. Approved decisions, risks, and remaining confirmation
 
+### Project Owner-approved S04 integration expectations — S02-owner confirmation pending
+
+The Project Owner approved the following integration expectations for recording. This is not S02-owner approval, evidence that the current service supports the contract, or proof that S02 is ready:
+
+- S04 determines the correct notification recipient from authoritative current room/house membership and designated primary-Warden information obtained through the approved Schedules & Responsibilities service boundary. S02 persists and dispatches the request; S02 does not independently choose the S04 recipient.
+- Before integration, S04 and S02 owners must confirm the event identity and type, recipient, minimum privacy-safe payload, related responsibility reference, deterministic deduplication key, persistence result (newly created versus existing duplicate), and failure behavior.
+- Repeated delivery of the same event identity must not create duplicate notifications. A genuinely new event must use a distinct identity. S02's unique deduplication key behavior is relevant evidence but does not by itself prove the S04 event contract or its concurrent state consistency.
+- Verify whether the existing dispatch interface supports transaction-bound persistence/repository injection for the required S04 consistency boundary. No such compatibility is asserted by this document.
+- If transaction-bound dispatch is incompatible, evaluate a transactional outbox as the preferred alternative to assess. Any outbox requires explicit technical-owner and architecture approval, including ownership, persistence, processing, retry, and recovery. No outbox implementation or approval is claimed.
+- Failure must be returned/handled according to an agreed contract; a caller must not claim notification persistence or delivery after an unverified fire-and-forget operation. S02 must not claim successful delivery when persistence fails.
+
+These integration expectations do not alter S02's current status or formal approval state. They must be reconciled with S02's existing failure contract and verified by the S02 owner before S04 integration is considered ready.
+
 **Approved S02 decisions:**
 
 1. S02 has no automatic notification deletion. Retention and cleanup require a separately approved policy.
@@ -119,7 +132,7 @@ Route handlers use Zod for query, parameter, and body validation; use S00 standa
 
 1. Exact `related_entity_id` representation for polymorphic domain records and validation rules for `related_module`.
 2. The final S03/S04/S05/S08/S10 request contracts and their synthetic integration fixtures.
-3. Reliability boundary when notification persistence fails: the implementation returns a standardized failure and does not claim delivery. No automatic retry/outbox processing exists unless a reviewed mechanism is approved.
+3. Reliability boundary when notification persistence fails: the implementation returns a standardized failure and does not claim delivery. No automatic retry/outbox processing exists unless a reviewed mechanism is approved. For S04, verify transaction-bound compatibility; if incompatible, evaluate an outbox as a preferred alternative subject to explicit technical-owner/architecture approval. No compatibility or outbox approval is recorded here.
 4. Formal reviewer/coordinator acceptance and the unrecorded estimate.
 
 **Definition of done:** all applicable acceptance criteria pass; an approved baseline/deployment strategy and redacted database connection verification allow the incremental migration to run; service/repository/routes/page preserve tier and ownership boundaries; recipient privacy and cross-user isolation are verified; deduplication and read-state behavior are proven; approved consuming-slice contracts are tested; actual evidence is recorded; reviewer and coordinator accept completion evidence; and `SLICE_REGISTER.md` is updated. S02 is not complete merely because its implementation is ready for review.

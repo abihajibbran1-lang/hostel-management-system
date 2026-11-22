@@ -49,7 +49,7 @@ The owners below are the **provisional allocation** from the project plan. Confi
 | S01 | Authentication and RBAC | Sign-in/authentication boundary, role enforcement, authenticated identity and ownership checks | NFR-01; BR-01, BR-04; CON-02; architecture auth/security decisions; ADR-003 | S00 | Member 1 | Member 3 | P0 | Specification Draft |
 | S02 | Shared Notification Service and Inbox | Shared in-app notification capability and notification inbox/dispatch boundary used by modules | FR-03, FR-04, FR-05; FR-02 assistance notification; FR-10/FR-11 escalation notifications where specified; architecture shared capability and worker decisions | S00, S01 | Khadija Tul Kubra | abihajibbran1-lang | P1 | In Progress |
 | S03 | Personal Schedule Management | Student create/view/update own private daily schedule; Karachi-local day filtering; overlapping activities allowed; recurrence and reminder delivery deferred | FR-01; NFR-01, NFR-02; BR-04 | S01; S02/S05 reminder-interface agreement remains pending for AC-S03-08 | Member 2 | Member 4 | P1 | Testing |
-| S04 | Shared Responsibility Coordination and Warden Assistance | Record and coordinate roommate-agreed responsibilities; request Warden assistance | FR-02; NFR-01; BR-08; relevant PRD workflow and acceptance criteria | S01, S02 | Member 2 | Member 3 | P1 | Planned |
+| S04 | Shared Responsibility Coordination and Warden Assistance | Record and coordinate roommate-agreed responsibilities; request Warden assistance | FR-02; NFR-01; BR-08; relevant PRD workflow and acceptance criteria | S01, S02; foundational Schedules & Responsibilities room/resident capability is a prerequisite (readiness unverified; implementation gate CLOSED) | Ifadha Hussain | Abiha | P1 | Planned |
 | S05 | Responsibility Reminders and Incomplete-Duty Alerts | Scheduled reminders and Warden alert after one reminder and confirmed non-completion | FR-03, FR-04; BR-08; architecture worker rules; ADR-005 | S02, S04; S00 worker foundation | Member 2 | Member 5 | P1 | Planned |
 | S06 | Complaint Submission and Student Tracking | Identified complaint creation and student access to own complaint tracking | FR-07, FR-09; BR-01, BR-04; NFR-01, NFR-02, NFR-03 | S01 | Member 3 | Member 4 | P0 | Planned |
 | S07 | Warden Complaint Management | Warden review, priority correction and complaint lifecycle management | FR-08; BR-06; relevant complaint states and PRD workflows | S01, S06 | Member 3 | Member 5 | P0 | Planned |
@@ -92,6 +92,7 @@ More precisely:
 - S00 → S01 → S02
 - S01 → S03
 - S01 + S02 → S04
+- Foundational Schedules & Responsibilities room/resident capability → S04 (required before actual S04 start; readiness remains unverified)
 - S04 + S02 + worker foundation → S05
 - S01 → S06 → S07 → S08 (S08 also depends on notification and worker capabilities)
 - S01 → S09 → S10 → S11 (S10 also uses S02)
@@ -118,7 +119,7 @@ Do not convert these into implementation assumptions without a recorded team dec
 |---|---|---|---|
 | OQ-01 | Exact business definition of Warden inactivity for the 18-hour direct-escalation condition | S08 | Preserve the 18-hour threshold and five-minute polling behavior. Team must define which complaint statuses qualify, what Warden actions count as activity, and when the inactivity clock starts/resets. Do not finalize eligibility logic until decided. |
 | OQ-02 | How system timeout confirms responsibility non-completion under FR-04 | S05 | Do not invent timeout duration or confirmation semantics. |
-| OQ-03 | Responsibility assignment and completion-confirmation rules | S04/S05 | Clarify who can assign, acknowledge, complete and confirm a responsibility. |
+| OQ-03 | Remaining S04 responsibility assignment/state transitions after Warden review, redistribution, withdrawal, and room transfer | S04/S05 | Formally confirm Owner-approved rules; resolve only exact statuses and remaining-participant effects not specified. Do not reopen selected rejection/non-response, material-change reacceptance, withdrawal, transfer, assistance deduplication/reassignment, concurrency, or notification-recipient rules. |
 | OQ-04 | Meal reservation eligibility and acceptable proof for university commitments | S10 | Clarify before finalizing validation and acceptance criteria. |
 | OQ-05 | Exact fixed meal portion categories/quantities | S11 | Confirm with the team/PRD; do not invent values. |
 | OQ-06 | Laundry operating hours and slot-generation policy | S12 | 60-minute slot duration is established; operating window and slot generation remain to be clarified if not specified elsewhere. |

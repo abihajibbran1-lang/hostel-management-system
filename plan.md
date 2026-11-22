@@ -105,7 +105,7 @@ The following is the **planning-level register**, not the final detailed slice s
 | S01 | Authentication and RBAC | Cross-cutting access/privacy; role boundaries | S00 | P0 |
 | S02 | Shared notification service and inbox | FR-03, FR-04, FR-05, FR-10, FR-11 and notification needs across modules | S00, S01 | P1 |
 | S03 | Personal schedule management | FR-01, relevant privacy rules | S01, S02 for reminders | P1 |
-| S04 | Shared responsibility coordination and Warden assistance | FR-02, relevant privacy rules | S01, S02 | P1 |
+| S04 | Shared responsibility coordination and Warden assistance | FR-02, relevant privacy rules | S01, S02, foundational Schedules & Responsibilities room/resident capability | P1 |
 | S05 | Responsibility reminders and incomplete-duty alerts | FR-03, FR-04 | S02, S04, worker foundation | P1 |
 | S06 | Complaint submission and student tracking | FR-07, FR-09, BR-01, BR-04 | S01 | P0 |
 | S07 | Warden complaint management | FR-08, BR-06, complaint lifecycle | S06 | P0 |
@@ -134,7 +134,7 @@ Provide the shared in-app notification capability: creation, retrieval, read sta
 Allow a student to create, view, and update their own daily schedule. Enforce privacy so other students cannot read the student's personal schedule. Reminder behavior is covered by the relevant notification/worker slices.
 
 #### S04 — Shared Responsibility Coordination and Warden Assistance
-Allow roommates to record and coordinate agreed shared responsibilities, including the responsible student(s), and provide an explicit Request Warden Assistance action when coordination fails. The exact assignment/completion workflow needs to be detailed without exposing private personal schedule information.
+Allow roommates to coordinate agreed shared responsibilities under the Owner-approved S04 workflow, including acceptance, completion, and Request Warden Assistance. S04 remains Planned with its implementation gate CLOSED; implementation is conditional on foundational room/resident capability, S00/S01/S02 readiness, formal decisions, and recorded approval. Preserve the private personal-schedule boundary and pending PRD NFR-01 reconciliation.
 
 #### S05 — Responsibility Reminders and Incomplete-Duty Alerts
 Implement activity reminders 30 minutes before scheduled activities and responsibility reminders 24 hours and 1 hour before deadlines. Exclude completed/cancelled responsibilities. Implement the one-reminder-then-Warden-alert rule only after the team clarifies how automated non-completion timeout is determined.
@@ -203,7 +203,7 @@ These assignments are temporary and must be confirmed by the five-person team. M
 | Team member | Proposed primary slices | Coordination focus |
 |---|---|---|
 | Member 1 | S00, S01 | Foundation, authentication, cross-module access consistency |
-| Member 2 | S03, S04, S05 | Schedules, responsibilities, notification/worker integration |
+| Ifadha Hussain (Member 2) | S03, S04, S05 | Schedules and notification/worker integration; S04 Owner: Ifadha Hussain (Member 2); S04 Reviewer: Abiha; Final S04 approval authority: Ifadha Hussain (S04 Owner) |
 | Member 3 | S06, S07, S08 | Complaint lifecycle and escalation |
 | Member 4 | S09, S10, S11, S13 | Meals and Lost & Found reporting |
 | Member 5 | S12, S14 | Laundry concurrency and Lost & Found verification |
@@ -218,7 +218,7 @@ Do not convert these into assumptions without a recorded team decision. A questi
 |---|---|---|---|
 | OQ-01 | What exactly qualifies as Warden inactivity for the 18-hour direct escalation rule? | **Team decision pending.** The team will discuss and agree whether eligibility applies only to complaints remaining `Pending`, or to any active complaint with no Warden action regardless of status, or another definition. Preserve the 18-hour threshold. Do not implement/finalize eligibility logic until the team agrees. | 18-hour eligibility portion of S08 only |
 | OQ-02 | What duration/condition constitutes the automated timeout for confirming responsibility non-completion after the reminder? | Keep the PRD rule visible; obtain team clarification before implementing timeout behavior. | Automated timeout portion of S05 |
-| OQ-03 | What is the exact responsibility assignment, acknowledgement, and completion-confirmation workflow? | Detail with the team; do not invent who can assign/confirm on behalf of whom. | Affected S04/S05 behavior |
+| OQ-03 | What responsibility assignment/state transitions remain unspecified after Warden review, redistribution, withdrawal, and room transfer? | Confirm Owner-approved rules formally; decide only exact statuses and remaining-participant effects not specified in the approved workflow. Do not reopen selected rejection/non-response, material-change reacceptance, withdrawal, transfer, assistance deduplication/reassignment, concurrency, or notification-recipient rules. | Affected S04/S05 behavior |
 | OQ-04 | What eligibility evidence or authorization is required for meal reservations? | Preserve the requirement for students with authorized university commitments; clarify the validation workflow. | Eligibility portion of S10 |
 | OQ-05 | What are the fixed meal portion categories/quantities and what does the Warden verify? | Obtain team-approved operational values and audit rules. | Detailed S11 acceptance criteria |
 | OQ-06 | What are laundry operating hours and how are reservable slots generated? | Preserve 60-minute slot duration and concurrency rule; clarify schedule availability. | Slot-generation details in S12 |
@@ -247,7 +247,7 @@ This is a capacity-aware starting proposal, not a guarantee. Adjust it after the
 |---|---|---|
 | 1 | Planning and foundation | Confirm plan, repo conventions, S00 |
 | 2 | Access and shared capability | S01; begin S02 |
-| 3 | First user workflows | S03, S04, S06 (parallel only where dependencies permit) |
+| 3 | First user workflows | S03, S04, S06 (S04 actual implementation only after the foundational room/resident capability and its dependencies are verified) |
 | 4 | Complaint operations and module foundations | S07, S09, S12 foundation |
 | 5 | Reminder/meal/lost-found workflows | S05, S10, S13 |
 | 6 | Escalation, audit, laundry completion | S08 (except unresolved 18h logic), S11, S12 |
