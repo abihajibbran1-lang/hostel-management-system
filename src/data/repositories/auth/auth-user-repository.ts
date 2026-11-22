@@ -1,8 +1,14 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient, UserRole } from "@prisma/client";
 
 import { prisma } from "../../database/prisma.ts";
 
 type AuthPrismaClient = Pick<PrismaClient, "user">;
+
+export type AccountStatus = {
+  userId: string;
+  role: UserRole;
+  isActive: boolean;
+};
 
 export class AuthUserRepository {
   private readonly client: AuthPrismaClient;
@@ -23,12 +29,22 @@ export class AuthUserRepository {
     });
   }
 
-  async isActive(id: string) {
+  async getAccountStatus(id: string): Promise<AccountStatus | null> {
     const user = await this.client.user.findUnique({
       where: { id },
-      select: { isActive: true },
+      select: { id: true, role: true, isActive: true },
     });
 
-    return user?.isActive ?? false;
+    return user
+      ? {
+          userId: user.id,
+          role: user.role,
+          isActive: user.isActive,
+        }
+      : null;
+  }
+
+  async isActive(id: string) {
+    return (await this.getAccountStatus(id))?.isActive ?? false;
   }
 }

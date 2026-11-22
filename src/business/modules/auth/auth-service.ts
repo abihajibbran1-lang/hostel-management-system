@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import type { User } from "@prisma/client";
+import type { User, UserRole } from "@prisma/client";
 
 import { AuthUserRepository } from "../../../data/repositories/auth/auth-user-repository.ts";
 
@@ -10,10 +10,16 @@ const DUMMY_PASSWORD_HASH =
 
 type UserLookup = {
   findByEmail(email: string): Promise<User | null>;
+  getAccountStatus(userId: string): Promise<AccountStatus | null>;
 };
 type PasswordComparator = (password: string, passwordHash: string) => Promise<boolean>;
 
 export type AuthenticatedUser = Pick<User, "id" | "fullName" | "email" | "role">;
+export type AccountStatus = {
+  userId: string;
+  role: UserRole;
+  isActive: boolean;
+};
 
 export function isPasswordInputWithinPolicy(password: string) {
   return (
@@ -32,6 +38,10 @@ export class AuthService {
   ) {
     this.users = users;
     this.comparePassword = comparePassword;
+  }
+
+  async getAccountStatus(userId: string): Promise<AccountStatus | null> {
+    return this.users.getAccountStatus(userId);
   }
 
   async verifyProvisionedCredentials(email: string, password: string) {
