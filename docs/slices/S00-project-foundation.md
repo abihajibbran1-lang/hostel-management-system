@@ -279,15 +279,30 @@ The team must choose exact package-manager commands and tool versions during set
 
 ## 14. Open questions, risks, and decisions
 
+### Project Owner-approved foundation guidance — approvals confirmed; evidence separate
+
+The Project Owner reports Owner, formal team, and affected technical-owner approval of the consolidated S00–S04 decision package. These approvals are recorded as confirmed based on the Owner's instruction for this task; individual approver names, dates, and separate evidence references were not supplied. Approval does not establish implementation or technical verification evidence:
+
+- The existing repository project configuration and committed lockfile are the source of truth for the Node.js/package-manager constraints and dependency resolution. The current `package.json` declares Node.js `>=22.18.0` and npm `>=10.0.0`; `package-lock.json` is present, but no exact `packageManager` pin is declared. Record these as the observed constraints, not as proof of the installed runtime or a formally selected team standard. Do not invent versions or replace the lockfile without an approved change.
+- Environment documentation must use placeholders only. Development database credentials are handed off through a private, access-controlled process using least-privilege access; no secret, credential, or connection string is recorded here.
+- Defer an optional health endpoint unless a concrete foundation need is established and the endpoint is agreed within the architecture boundary.
+- Reconcile the shared standardized API error convention with S01 before claiming a common contract. The exact response shape remains pending until the responsible owners confirm it.
+- The existing separate local worker command is documented as `npm run worker` (`node src/business/workers/index.ts`) and README instructs running it in another terminal. Document and verify that startup as S00 evidence; the command text alone is not proof of a successful run.
+- Production hosting, monitoring, and alerting remain deferred and undecided for the local-development deliverable.
+- Database connection, baseline/deployment strategy, migration application, and redacted verification evidence remain required. No database readiness or migration application is claimed here.
+- Preserve the approved room/resident ownership boundary: Schedules & Responsibilities owns the foundational capability and S04 consumes it through an approved service interface. Schema, migrations, service design, and verification remain pending.
+
+The approvals above do not establish implementation or technical verification. Actual tool versions, commands, database connectivity, room/resident capability, and migration status require repository/environment evidence. The Owner reports verification complete, but the evidence below does not support recording database, migration, or room/resident readiness as verified.
+
 | ID | Question / risk | Why it matters | Owner | Blocking? | Resolution |
 |---|---|---|---|---|---|
-| OQ-S00-01 | Which exact Node.js and package-manager versions will the team standardize on? | Reproducible setup across five developers | Owner + team | Yes for final setup instructions | Pending team agreement; record actual chosen versions |
+| OQ-S00-01 | Which exact Node.js and package-manager versions are evidenced by the existing project configuration and lockfile, and are they accepted as the team standard? | Reproducible setup across five developers | Owner + team | Yes for final setup instructions | Current manifest constraints are Node.js `>=22.18.0` and npm `>=10.0.0`; `package-lock.json` exists and no exact `packageManager` pin is present. Confirm the exact runtime/package-manager standard with the team. |
 | OQ-S00-02 | What exact local environment variable names are required for database connectivity and later authentication? | `.env.example` and local setup | Owner + S01 owner | No for initial scaffold; yes before dependent features run | Derive from implemented configuration and document; never invent secrets |
-| OQ-S00-03 | What is the agreed private process for sharing development Supabase credentials? | Prevent secret leakage | Team | Yes before connecting a developer environment | Team decision required |
-| OQ-S00-04 | Which minimal baseline route/check, if any, will be used to verify the app is running? | Avoid adding an unapproved API contract | Owner + reviewer | No | Keep minimal and document if introduced |
-| OQ-S00-05 | What exact standardized API error response shape will the project use? | Architecture requires consistency but does not define the full shape | Coordinator + team | Yes before shared API convention is finalized | Propose a shape for team review; do not treat as approved until accepted |
-| OQ-S00-06 | Which exact worker startup command/process convention will be used? | Web app and worker must run separately | Owner + team | Yes before S00 completion | Implement and document a reproducible local process |
-| OQ-S00-07 | Production hosting and worker monitoring/alerting are undecided | Production deployment cannot be finalized in S00 | Team | No for local deliverable | Keep explicitly undecided |
+| OQ-S00-03 | What private, access-controlled, least-privilege process will provide development Supabase credentials? | Prevent secret leakage and excessive access | Team + S00 owner | Yes before connecting a developer environment | Owner-approved direction is private handoff and least privilege; exact process and evidence remain pending. Never record credentials here. |
+| OQ-S00-04 | Health route/check disposition | Avoid adding an unnecessary API contract | Owner + reviewer | No | Deferred. Reconsider only if a concrete foundation need is established; no route is selected. |
+| OQ-S00-05 | What exact standardized API error response shape will S00 and S01 share? | Consistent safe errors are needed across the API boundary | S00/S01 owners + coordinator/team | Yes before asserting a shared contract | Reconcile the specifications and record a jointly confirmed shape; neither document alone establishes agreement. |
+| OQ-S00-06 | Has the documented separate worker process been successfully started and verified for S00 acceptance? | Web app and worker must run separately | Owner + team | Yes before S00 completion | The command is identified as `npm run worker` (`node src/business/workers/index.ts`). Startup evidence is recorded in `docs/WORKFLOW_EVIDENCE_LOG.md` (17 Nov 2026, S00 clean-clone startup verification); live database and migration readiness remain unverified. |
+| OQ-S00-07 | Production hosting and worker monitoring/alerting are undecided | Production deployment cannot be finalized in S00 | Team | No for local deliverable | Defer; do not select a provider or monitoring design in S00. |
 
 ## 15. Definition of Done
 
