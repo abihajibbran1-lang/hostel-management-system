@@ -26,8 +26,47 @@ function createUser(passwordHash: string, isActive = true): User {
 function createService(user: User | null) {
   return new AuthService({
     findByEmail: async () => user,
+    getAccountStatus: async () =>
+      user
+        ? {
+            userId: user.id,
+            role: user.role,
+            isActive: user.isActive,
+          }
+        : null,
   });
 }
+
+test("returns the safe account status for an active user", async () => {
+  const user = createUser("unused-password-hash");
+
+  const result = await createService(user).getAccountStatus(user.id);
+
+  assert.deepEqual(result, {
+    userId: user.id,
+    role: user.role,
+    isActive: true,
+  });
+  assert.equal("passwordHash" in (result ?? {}), false);
+});
+
+test("returns the safe account status for an inactive user", async () => {
+  const user = createUser("unused-password-hash", false);
+
+  const result = await createService(user).getAccountStatus(user.id);
+
+  assert.deepEqual(result, {
+    userId: user.id,
+    role: user.role,
+    isActive: false,
+  });
+});
+
+test("returns null for a nonexistent account status", async () => {
+  const result = await createService(null).getAccountStatus("missing-user-id");
+
+  assert.equal(result, null);
+});
 
 test("verifies a correct password for an active provisioned user", async () => {
   const user = createUser(await bcrypt.hash(password, 10));
