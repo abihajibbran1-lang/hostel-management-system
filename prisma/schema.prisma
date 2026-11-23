@@ -14,6 +14,27 @@ enum UserRole {
   MANAGER       @map("Manager")
 }
 
+enum ResponsibilityStatus {
+  PENDING_ACCEPTANCE @map("Pending Acceptance")
+  ACTIVE             @map("Active")
+  ASSISTANCE_REQUESTED @map("Assistance Requested")
+  COMPLETED          @map("Completed")
+  CANCELLED           @map("Cancelled")
+}
+
+enum ResponsibilityAssignmentStatus {
+  PENDING   @map("Pending")
+  ACCEPTED  @map("Accepted")
+  REJECTED  @map("Rejected")
+  COMPLETED @map("Completed")
+  WITHDRAWN @map("Withdrawn")
+}
+
+enum AssistanceRequestStatus {
+  ACTIVE @map("Active")
+  CLOSED @map("Closed")
+}
+
 model User {
   id            String         @id @default(uuid()) @db.Uuid
   fullName      String         @map("full_name")
@@ -25,6 +46,9 @@ model User {
   updatedAt     DateTime       @updatedAt @map("updated_at")
   notifications Notification[]
   personalSchedules  PersonalSchedule[]
+  responsibilityAssignments ResponsibilityAssignment[]
+  responsibilitiesCreated Responsibility[] @relation("ResponsibilityCreator")
+  assistanceRequests AssistanceRequest[]
 
   @@map("users")
 }
@@ -61,4 +85,63 @@ model Notification {
 
   @@index([userId, createdAt])
   @@map("notifications")
+}
+
+model Responsibility {
+  id                 String               @id @default(uuid()) @db.Uuid
+  createdByUserId    String               @map("created_by_user_id") @db.Uuid
+  title              String
+  description        String
+  dueAt              DateTime             @map("due_at") @db.Timestamptz(3)
+  acceptanceDeadline DateTime?             @map("acceptance_deadline") @db.Timestamptz(3)
+  roomId             String               @map("room_id")
+  houseId            String               @map("house_id")
+  status             ResponsibilityStatus  @default(PENDING_ACCEPTANCE)
+  revision           Int                  @default(0)
+  completedAt        DateTime?             @map("completed_at") @db.Timestamptz(3)
+  cancelledAt        DateTime?             @map("cancelled_at") @db.Timestamptz(3)
+  createdAt          DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime             @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdBy          User                 @relation("ResponsibilityCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  assignments        ResponsibilityAssignment[]
+  assistanceRequests AssistanceRequest[]
+
+  @@index([roomId, status, dueAt])
+  @@index([houseId, status, createdAt])
+  @@map("responsibilities")
+}
+
+model ResponsibilityAssignment {
+  id                String                            @id @default(uuid()) @db.Uuid
+  responsibilityId  String                            @map("responsibility_id") @db.Uuid
+  studentUserId     String                            @map("student_user_id") @db.Uuid
+  status            ResponsibilityAssignmentStatus   @default(PENDING)
+  acceptedAt        DateTime?                         @map("accepted_at") @db.Timestamptz(3)
+  rejectedAt        DateTime?                         @map("rejected_at") @db.Timestamptz(3)
+  withdrawnAt       DateTime?                         @map("withdrawn_at") @db.Timestamptz(3)
+  completedAt       DateTime?                         @map("completed_at") @db.Timestamptz(3)
+  createdAt         DateTime                          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime                          @updatedAt @map("updated_at") @db.Timestamptz(3)
+  responsibility   Responsibility                   @relation(fields: [responsibilityId], references: [id], onDelete: Restrict)
+  student           User                              @relation(fields: [studentUserId], references: [id], onDelete: Restrict)
+
+  // PostgreSQL migration adds a partial unique index for non-Withdrawn assignment rows.
+  @@index([responsibilityId, studentUserId])
+  @@index([studentUserId, status, createdAt])
+  @@map("responsibility_assignments")
+}
+
+model AssistanceRequest {
+  id                String                 @id @default(uuid()) @db.Uuid
+  responsibilityId  String                 @map("responsibility_id") @db.Uuid
+  requestedByUserId String                 @map("requested_by_user_id") @db.Uuid
+  status            AssistanceRequestStatus @default(ACTIVE)
+  deduplicationKey  String                 @unique @map("deduplication_key")
+  createdAt         DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  closedAt          DateTime?              @map("closed_at") @db.Timestamptz(3)
+  responsibility   Responsibility        @relation(fields: [responsibilityId], references: [id], onDelete: Restrict)
+  requestedBy       User                   @relation(fields: [requestedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([responsibilityId, status, createdAt])
+  @@map("assistance_requests")
 }
