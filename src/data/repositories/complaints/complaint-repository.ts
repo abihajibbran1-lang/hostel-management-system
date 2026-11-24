@@ -1,6 +1,7 @@
 import { ComplaintCategory, ComplaintStatus } from "@prisma/client";
 
 import type { ComplaintListQuery } from "../../../business/modules/complaints/complaint-contract.ts";
+import type { WardenComplaintQueueQuery } from "../../../business/modules/complaints/warden-complaint-contract.ts";
 
 import { prisma } from "../../database/prisma.ts";
 
@@ -45,6 +46,18 @@ export type ComplaintListPage = {
   nextCursor?: string;
 };
 
+export type ComplaintWhereInput = {
+  id?: string;
+  submittedBy?: string;
+  status?: ComplaintStatus | { in: ComplaintStatus[] };
+  urgencyFlag?: boolean | { not: boolean };
+};
+
+export type ComplaintUpdateData = {
+  status?: ComplaintStatus;
+  urgencyFlag?: boolean;
+};
+
 const prismaCategoryByValue: Record<string, ComplaintCategory> = {
   Water: ComplaintCategory.WATER,
   Hygiene: ComplaintCategory.HYGIENE,
@@ -75,6 +88,11 @@ const valueByPrismaStatus: Record<ComplaintStatus, string> = {
   [ComplaintStatus.ESCALATED]: "Escalated",
 };
 
+const activeComplaintStatuses: ComplaintStatus[] = [
+  ComplaintStatus.PENDING,
+  ComplaintStatus.IN_PROGRESS,
+];
+
 function toPrismaCategory(value: string): ComplaintCategory {
   const mapped = prismaCategoryByValue[value];
   if (!mapped) {
@@ -89,6 +107,10 @@ function toPrismaStatus(value: string): ComplaintStatus {
     throw new Error(`Unsupported complaint status: ${value}`);
   }
   return mapped;
+}
+
+function isActiveComplaintStatus(status: ComplaintStatus) {
+  return activeComplaintStatuses.includes(status);
 }
 
 function toComplaintRecord(record: ComplaintDelegateRecord): ComplaintRecord {
@@ -130,7 +152,7 @@ type ComplaintCreateArgs = {
 };
 
 type ComplaintFindManyArgs = {
-  where: { submittedBy: string };
+  where: ComplaintWhereInput;
   orderBy: Array<{ submittedAt: "desc" } | { id: "desc" }>;
   take: number;
   cursor?: { id: string };
@@ -139,14 +161,20 @@ type ComplaintFindManyArgs = {
 };
 
 type ComplaintFindFirstArgs = {
-  where: { id: string; submittedBy: string };
+  where: ComplaintWhereInput;
   include?: ResolvedOutcomeInclude;
+};
+
+type ComplaintUpdateManyArgs = {
+  where: ComplaintWhereInput;
+  data: ComplaintUpdateData;
 };
 
 type ComplaintDelegate = {
   create(args: ComplaintCreateArgs): Promise<ComplaintDelegateRecord>;
   findMany(args: ComplaintFindManyArgs): Promise<ComplaintDelegateRecord[]>;
   findFirst(args: ComplaintFindFirstArgs): Promise<ComplaintDelegateRecord | null>;
+  updateMany(args: ComplaintUpdateManyArgs): Promise<{ count: number }>;
 };
 
 type HistoryCreateArgs = {
@@ -175,6 +203,31 @@ export class ComplaintRepository {
 
   constructor(client: ComplaintPrismaClient = prisma as unknown as ComplaintPrismaClient) {
     this.client = client;
+  }
+
+  private async updateWithHistory(
+    id: string,
+    where: ComplaintWhereInput,
+    data: ComplaintUpdateData,
+    history: Omit<HistoryCreateArgs["data"], "complaintId">,
+  ): Promise<ComplaintRecord | null> {
+    return this.client.$transaction(async (transactionClient) => {
+      const result = await transactionClient.complaint.updateMany({ where, data });
+      if (result.count === 0) {
+        return null;
+      }
+
+      await transactionClient.complaintStatusHistory.create({
+        data: { complaintId: id, ...history },
+      });
+
+      const record = await transactionClient.complaint.findFirst({
+        where: { id },
+        include: resolvedOutcomeInclude,
+      });
+
+      return record ? toComplaintRecord(record) : null;
+    });
   }
 
   createWithInitialHistory(write: ComplaintWrite): Promise<ComplaintRecord> {
@@ -206,9 +259,25 @@ export class ComplaintRepository {
     submittedBy: string,
     query: ComplaintListQuery,
   ): Promise<ComplaintListPage> {
+    return this.listPage({ submittedBy }, query);
+  }
+
+  async listForWarden(query: WardenComplaintQueueQuery): Promise<ComplaintListPage> {
+    const where: ComplaintWhereInput = {
+      ...(query.status ? { status: toPrismaStatus(query.status) } : {}),
+      ...(query.urgencyFlag !== undefined ? { urgencyFlag: query.urgencyFlag } : {}),
+    };
+
+    return this.listPage(where, query);
+  }
+
+  private async listPage(
+    where: ComplaintWhereInput,
+    query: ComplaintListQuery,
+  ): Promise<ComplaintListPage> {
     const records = (
       await this.client.complaint.findMany({
-        where: { submittedBy },
+        where,
         orderBy: [{ submittedAt: "desc" }, { id: "desc" }],
         take: query.limit + 1,
         ...(query.cursor ? { cursor: { id: query.cursor }, skip: 1 } : {}),
@@ -226,11 +295,114 @@ export class ComplaintRepository {
   }
 
   async findOwned(submittedBy: string, id: string): Promise<ComplaintRecord | null> {
+    return this.find({ id, submittedBy });
+  }
+
+  async findForWarden(id: string): Promise<ComplaintRecord | null> {
+    return this.find({ id });
+  }
+
+  private async find(where: ComplaintWhereInput): Promise<ComplaintRecord | null> {
     const record = await this.client.complaint.findFirst({
-      where: { id, submittedBy },
+      where,
       include: resolvedOutcomeInclude,
     });
 
     return record ? toComplaintRecord(record) : null;
+  }
+
+  transitionToInProgress(
+    id: string,
+    actorUserId: string,
+    changedAt: Date,
+  ): Promise<ComplaintRecord | null> {
+    return this.updateWithHistory(
+      id,
+      { id, status: ComplaintStatus.PENDING },
+      { status: ComplaintStatus.IN_PROGRESS },
+      {
+        oldStatus: ComplaintStatus.PENDING,
+        newStatus: ComplaintStatus.IN_PROGRESS,
+        changedBy: actorUserId,
+        reason: null,
+        changedAt,
+      },
+    );
+  }
+
+  resolveComplaint(
+    id: string,
+    actorUserId: string,
+    outcome: string,
+    changedAt: Date,
+  ): Promise<ComplaintRecord | null> {
+    return this.updateWithHistory(
+      id,
+      { id, status: ComplaintStatus.IN_PROGRESS },
+      { status: ComplaintStatus.RESOLVED },
+      {
+        oldStatus: ComplaintStatus.IN_PROGRESS,
+        newStatus: ComplaintStatus.RESOLVED,
+        changedBy: actorUserId,
+        reason: outcome,
+        changedAt,
+      },
+    );
+  }
+
+  correctUrgency(
+    id: string,
+    actorUserId: string,
+    urgencyFlag: boolean,
+    reason: string,
+    changedAt: Date,
+  ): Promise<ComplaintRecord | null> {
+    return this.client.$transaction(async (transactionClient) => {
+      const current = await transactionClient.complaint.findFirst({ where: { id } });
+
+      if (
+        !current ||
+        !isActiveComplaintStatus(current.status) ||
+        current.urgencyFlag === urgencyFlag
+      ) {
+        return null;
+      }
+
+      const result = await transactionClient.complaint.updateMany({
+        where: {
+          id,
+          status: current.status,
+          urgencyFlag: { not: urgencyFlag },
+        },
+        data: { urgencyFlag },
+      });
+
+      if (result.count === 0) {
+        return null;
+      }
+
+      await transactionClient.complaintStatusHistory.create({
+        data: {
+          complaintId: id,
+          oldStatus: current.status,
+          newStatus: current.status,
+          changedBy: actorUserId,
+          reason: JSON.stringify({
+            change: "urgency",
+            from: current.urgencyFlag,
+            to: urgencyFlag,
+            note: reason,
+          }),
+          changedAt,
+        },
+      });
+
+      const record = await transactionClient.complaint.findFirst({
+        where: { id },
+        include: resolvedOutcomeInclude,
+      });
+
+      return record ? toComplaintRecord(record) : null;
+    });
   }
 }
