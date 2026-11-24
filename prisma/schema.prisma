@@ -14,6 +14,21 @@ enum UserRole {
   MANAGER       @map("Manager")
 }
 
+enum ComplaintCategory {
+  WATER       @map("Water")
+  HYGIENE     @map("Hygiene")
+  PESTS       @map("Pests")
+  ELECTRICITY @map("Electricity")
+  FACILITIES  @map("Facilities")
+}
+
+enum ComplaintStatus {
+  PENDING      @map("Pending")
+  IN_PROGRESS  @map("In Progress")
+  RESOLVED     @map("Resolved")
+  ESCALATED    @map("Escalated")
+}
+
 enum ResponsibilityStatus {
   PENDING_ACCEPTANCE @map("Pending Acceptance")
   ACTIVE             @map("Active")
@@ -49,6 +64,8 @@ model User {
   responsibilityAssignments ResponsibilityAssignment[]
   responsibilitiesCreated Responsibility[] @relation("ResponsibilityCreator")
   assistanceRequests AssistanceRequest[]
+  complaints Complaint[]
+  complaintStatusHistoryChanges ComplaintStatusHistory[]
 
   @@map("users")
 }
@@ -144,4 +161,37 @@ model AssistanceRequest {
 
   @@index([responsibilityId, status, createdAt])
   @@map("assistance_requests")
+}
+
+model Complaint {
+  id           String            @id @default(uuid()) @db.Uuid
+  submittedBy  String            @map("submitted_by") @db.Uuid
+  category     ComplaintCategory
+  roomNumber   String            @map("room_number")
+  description  String
+  urgencyFlag  Boolean           @map("urgency_flag")
+  status       ComplaintStatus   @default(PENDING)
+  submittedAt  DateTime          @map("submitted_at")
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+  submitter    User              @relation(fields: [submittedBy], references: [id], onDelete: Restrict)
+  statusHistory ComplaintStatusHistory[]
+
+  @@index([submittedBy, submittedAt])
+  @@map("complaints")
+}
+
+model ComplaintStatusHistory {
+  id           String           @id @default(uuid()) @db.Uuid
+  complaintId  String           @map("complaint_id") @db.Uuid
+  oldStatus    ComplaintStatus? @map("old_status")
+  newStatus    ComplaintStatus  @map("new_status")
+  changedBy    String?          @map("changed_by") @db.Uuid
+  reason       String?
+  changedAt    DateTime         @map("changed_at")
+  complaint    Complaint        @relation(fields: [complaintId], references: [id], onDelete: Restrict)
+  changedByUser User?           @relation(fields: [changedBy], references: [id], onDelete: SetNull)
+
+  @@index([complaintId, changedAt])
+  @@map("complaint_status_history")
 }
