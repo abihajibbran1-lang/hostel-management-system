@@ -86,3 +86,25 @@ export class NotificationRepository {
     });
   }
 }
+
+// A duplicate must not abort a caller's PostgreSQL transaction. Unlike catching
+// a unique-constraint violation, skipDuplicates leaves the transaction usable.
+export async function createNotificationInTransaction(
+  client: NotificationPrismaClient,
+  request: NotificationDispatchRequest,
+) {
+  const { recipientUserId: userId, ...notification } = request;
+  await client.notification.createMany({
+    data: { userId, ...notification },
+    skipDuplicates: true,
+  });
+  const existing = await client.notification.findUniqueOrThrow({
+    where: { deduplicationKey: request.deduplicationKey },
+  });
+  if (existing.userId !== userId || existing.type !== request.type ||
+      existing.relatedModule !== request.relatedModule ||
+      existing.relatedEntityId !== request.relatedEntityId) {
+    throw new Error("Notification deduplication key belongs to a different event.");
+  }
+  return existing;
+}

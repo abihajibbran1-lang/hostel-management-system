@@ -19,12 +19,14 @@ function isApiResponse(value: unknown): value is NextResponse {
 
 function getListQuery(request: Request) {
   const searchParams = new URL(request.url).searchParams;
+  const queue = searchParams.get("queue");
 
   return {
     status: searchParams.get("status") ?? undefined,
     urgencyFlag: searchParams.get("urgencyFlag") ?? undefined,
     limit: searchParams.get("limit") ?? undefined,
     cursor: searchParams.get("cursor") ?? undefined,
+    ...(queue !== null ? { queue } : {}),
   };
 }
 

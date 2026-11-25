@@ -106,6 +106,8 @@ The system shall send in-app notifications to students 30 minutes prior to sched
 ### FR-04 — Incomplete Responsibility Notification
 After sending one reminder, if a responsibility remains incomplete, the system shall notify the warden once non-completion is confirmed via assigned student self-reporting or automated system time-out, without exposing personal student schedules to other roommates[cite: 2].
 
+The automatic check runs at the first five-minute worker poll at or after one hour past the current deadline. It evaluates each accepted assignment that is still incomplete and has received a reminder for its current version. Completion, cancellation, withdrawal or room transfer before the check excludes the affected work. A revised deadline uses its own grace period and requires a reminder for the revised assignment. The system sends one staff alert per duty across self-reports and automatic confirmations. The active primary Warden receives the alert, with Hostel Manager fallback if the house has no active primary Warden. No private schedule information is included.
+
 ### FR-05 — Meal Reservations and Collection Arrangements
 The system shall route meal reservations and advance collection difficulty notices directly to Kitchen Staff, while providing a read-only audit copy to the Warden[cite: 2].
 
@@ -117,6 +119,8 @@ The system shall allow students to submit identified complaints by requiring man
 
 ### FR-08 — Complaint Review and Lifecycle Management
 The system shall enforce the complaint lifecycle (`Pending` -> `In Progress` -> `Resolved` / `Escalated`). It shall allow the Warden to update statuses and correct priority flags[cite: 2].
+
+Wardens can review and act on complaints submitted under houses they are currently assigned to. The submission records the student's verified house at that time. Later room transfers do not change the complaint's house. The room number entered by the student remains part of the complaint report. Complaints without a verified submission house are handled in an unassigned intake queue by a designated Warden.
 
 ### FR-09 — Complaint Tracking
 The system shall allow students to view the real-time status and outcome of their own complaints only[cite: 2].

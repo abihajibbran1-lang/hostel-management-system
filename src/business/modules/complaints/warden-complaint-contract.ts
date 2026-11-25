@@ -14,6 +14,7 @@ const queryBooleanSchema = z
 export const wardenComplaintQueueQuerySchema = complaintCursorQuerySchema.extend({
   status: complaintStatusSchema.optional(),
   urgencyFlag: queryBooleanSchema.optional(),
+  queue: z.enum(["house", "intake"]).optional(),
 });
 
 export const resolveComplaintSchema = z

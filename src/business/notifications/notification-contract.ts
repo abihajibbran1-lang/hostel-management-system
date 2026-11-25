@@ -8,6 +8,7 @@ export const NOTIFICATION_TYPES = [
   "responsibility_reminder",
   "responsibility_incomplete",
   "responsibility_assistance",
+  "responsibility_update",
   "meal_reservation",
   "meal_collection_difficulty",
   "complaint_escalation",

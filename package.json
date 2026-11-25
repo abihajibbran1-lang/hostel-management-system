@@ -14,7 +14,7 @@
     "lint": "eslint .",
     "test": "node --test tests/*.test.ts",
     "typecheck": "tsc --noEmit",
-    "worker": "node src/business/workers/index.ts"
+    "worker": "node --env-file-if-exists=.env src/business/workers/index.ts"
   },
   "dependencies": {
     "@prisma/client": "6.7.0",

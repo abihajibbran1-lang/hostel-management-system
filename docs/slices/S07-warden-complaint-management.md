@@ -6,7 +6,9 @@
 Implement **FR-08** Warden review, urgency correction, and complaint lifecycle `Pending → In Progress → Resolved / Escalated`. **FR-09** requires owners to see updates/outcomes; **BR-02** targets resolution within 24 hours; **BR-06** permits Warden urgency correction; **BR-07** makes resolved records immutable. S08 owns the *trigger and Manager routing* of escalation, so S07 must not invent escalation eligibility.
 
 ## Dependencies and boundaries
-S00/S01, S06 complaint creation, status history, student tracking. S08 will integrate worker/manual escalation. No arbitrary Manager mutation endpoints or extra complaint states. Warden access is role-controlled and must follow agreed jurisdiction if multiple Wardens exist; Manager's escalation queue belongs to S08.
+S00/S01, S06 complaint creation, status history, student tracking, and the verified room and house assignments service. S08 will integrate worker/manual escalation. No arbitrary Manager mutation endpoints or extra complaint states. The Manager escalation queue belongs to S08.
+
+S06 captures the verified house when the student submits. The snapshot survives later transfers. S07 scopes list, detail, start, resolve and urgency correction to the Warden's current house assignments. The designated intake Warden can also handle complaints without a submission house. The intake configuration uses `COMPLAINT_INTAKE_WARDEN_ID`. Legacy complaints without a snapshot enter intake. Student-entered room numbers remain descriptive.
 
 ## Warden workflow
 1. Authenticated Warden opens authorized complaint queue, filters by status/urgency, and views complaint detail.
@@ -47,12 +49,12 @@ S00/S01, S06 complaint creation, status history, student tracking. S08 will inte
 - **AC07-07:** Implemented via history actor/timestamps; S08 activity interpretation remains a team decision.
 
 ## Open decisions / blockers
-1. **Warden jurisdiction (OPEN):** Which Warden(s) can see and act on which complaints if more than one Warden exists? Implementation currently allows any authenticated Warden to view/act on all complaints.
-2. **Transition policy (OPEN):** Is resolution allowed directly from `Pending`, or must `In Progress` occur first? Implementation uses **Pending → In Progress → Resolved** per the spec default; team confirmation is still required.
+1. **Warden jurisdiction (resolved):** Use current Warden house assignments, the verified house snapshot at submission, and a designated Warden intake queue for complaints without a house.
+2. **Transition policy:** Use **Pending → In Progress → Resolved**, as specified by FR-08 and the current S07 workflow.
 3. **Warden activity semantics (OPEN, S08):** Which actions count as Warden activity for 18-hour inactivity? S07 records actor/time history without deciding eligibility.
 4. `Closed` remains outside the PRD lifecycle; do not add it without an approved ADR/PRD change.
-5. **Urgency audit encoding (OPEN):** Urgency corrections are recorded as same-state history rows with JSON in `reason`; team approval of this implementation-level encoding is pending.
-6. **Warden action timestamp representation (OPEN):** Implementation derives action timestamps from `complaint_status_history` rather than adding `last_warden_action_at`; approval for future S08 use is pending.
+5. **Urgency audit encoding:** Preserve same-state history rows with JSON in `reason`, including before/after urgency and the explanation.
+6. **Warden action timestamps:** S07 preserves actor and time in `complaint_status_history`. Which events affect the inactivity clock remains an S08 decision.
 
 ## Implementation standards (all slices)
 - Follow `AGENTS.md`, `Final_PRD.md`, `architecture.md`, approved ADRs and S00 API conventions. Do not add unapproved functionality, roles, enums, microservices, or separate databases.

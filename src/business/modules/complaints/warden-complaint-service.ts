@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { requireAuthorizedRole } from "../auth/auth-authorization.ts";
 import type { AuthenticatedIdentity } from "../auth/jwt-service.ts";
+import { RoomService } from "../schedules/room-service.ts";
 import {
   apiAuthenticationFailed,
   apiNotFound,
@@ -20,21 +21,24 @@ import {
   ComplaintRepository,
   type ComplaintListPage,
   type ComplaintRecord,
+  type ComplaintScope,
 } from "../../../data/repositories/complaints/complaint-repository.ts";
 
 export type WardenComplaintStore = {
-  listForWarden(query: WardenComplaintQueueQuery): Promise<ComplaintListPage>;
-  findForWarden(id: string): Promise<ComplaintRecord | null>;
+  listForWarden(query: WardenComplaintQueueQuery, scope: ComplaintScope): Promise<ComplaintListPage>;
+  findForWarden(id: string, scope: ComplaintScope): Promise<ComplaintRecord | null>;
   transitionToInProgress(
     id: string,
     actorUserId: string,
     changedAt: Date,
+    scope: ComplaintScope,
   ): Promise<ComplaintRecord | null>;
   resolveComplaint(
     id: string,
     actorUserId: string,
     outcome: string,
     changedAt: Date,
+    scope: ComplaintScope,
   ): Promise<ComplaintRecord | null>;
   correctUrgency(
     id: string,
@@ -42,6 +46,7 @@ export type WardenComplaintStore = {
     urgencyFlag: boolean,
     reason: string,
     changedAt: Date,
+    scope: ComplaintScope,
   ): Promise<ComplaintRecord | null>;
 };
 
@@ -61,16 +66,27 @@ function isTerminalStatus(status: string) {
   return status === "Resolved" || status === "Escalated";
 }
 
+async function getWardenScope(userId: string): Promise<ComplaintScope> {
+  const intakeWardenId = process.env.COMPLAINT_INTAKE_WARDEN_ID?.trim().toLowerCase();
+  return {
+    houseIds: await new RoomService().listAssignedHouseIds(userId),
+    intake: userId.toLowerCase() === intakeWardenId,
+  };
+}
+
 export class WardenComplaintService {
   private readonly complaints: WardenComplaintStore;
   private readonly clock: () => Date;
+  private readonly scopeFor: (userId: string) => Promise<ComplaintScope>;
 
   constructor(
     complaints: WardenComplaintStore = new ComplaintRepository(),
     clock: () => Date = () => new Date(),
+    scopeFor: (userId: string) => Promise<ComplaintScope> = getWardenScope,
   ) {
     this.complaints = complaints;
     this.clock = clock;
+    this.scopeFor = scopeFor;
   }
 
   private authorize(identity: AuthenticatedIdentity | null): AuthorizedWarden {
@@ -98,7 +114,7 @@ export class WardenComplaintService {
       return apiValidationError(parsed.error);
     }
 
-    return this.complaints.listForWarden(parsed.data);
+    return this.complaints.listForWarden(parsed.data, await this.scopeFor(warden.userId));
   }
 
   async get(
@@ -115,7 +131,7 @@ export class WardenComplaintService {
       return apiValidationError(parsedId.error);
     }
 
-    const complaint = await this.complaints.findForWarden(parsedId.data);
+    const complaint = await this.complaints.findForWarden(parsedId.data, await this.scopeFor(warden.userId));
     return complaint ?? apiNotFound();
   }
 
@@ -133,7 +149,8 @@ export class WardenComplaintService {
       return apiValidationError(parsedId.error);
     }
 
-    const current = await this.complaints.findForWarden(parsedId.data);
+    const scope = await this.scopeFor(warden.userId);
+    const current = await this.complaints.findForWarden(parsedId.data, scope);
     if (!current) {
       return apiNotFound();
     }
@@ -145,6 +162,7 @@ export class WardenComplaintService {
       parsedId.data,
       warden.userId,
       this.clock(),
+      scope,
     );
 
     return updated ?? validationError("The complaint changed before it could be started.");
@@ -170,7 +188,8 @@ export class WardenComplaintService {
       return apiValidationError(parsedInput.error);
     }
 
-    const current = await this.complaints.findForWarden(parsedId.data);
+    const scope = await this.scopeFor(warden.userId);
+    const current = await this.complaints.findForWarden(parsedId.data, scope);
     if (!current) {
       return apiNotFound();
     }
@@ -187,6 +206,7 @@ export class WardenComplaintService {
       warden.userId,
       parsedInput.data.outcome,
       this.clock(),
+      scope,
     );
 
     return updated ?? validationError("The complaint changed before it could be resolved.");
@@ -212,7 +232,8 @@ export class WardenComplaintService {
       return apiValidationError(parsedInput.error);
     }
 
-    const current = await this.complaints.findForWarden(parsedId.data);
+    const scope = await this.scopeFor(warden.userId);
+    const current = await this.complaints.findForWarden(parsedId.data, scope);
     if (!current) {
       return apiNotFound();
     }
@@ -229,6 +250,7 @@ export class WardenComplaintService {
       parsedInput.data.urgencyFlag,
       parsedInput.data.reason,
       this.clock(),
+      scope,
     );
 
     return updated ?? validationError("The complaint changed before urgency could be corrected.");

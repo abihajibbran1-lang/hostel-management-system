@@ -54,7 +54,7 @@ function isResponse(value: unknown): value is NextResponse {
 
 test("list validates queue filters and returns the repository page for a Warden", async () => {
   let receivedQuery: unknown;
-  const service = new WardenComplaintService(
+  const service = makeService(
     createStore({
       listForWarden: async (query) => {
         receivedQuery = query;
@@ -79,7 +79,7 @@ test("list validates queue filters and returns the repository page for a Warden"
 
 test("list rejects unauthenticated, non-Warden and invalid query requests", async () => {
   let calls = 0;
-  const service = new WardenComplaintService(
+  const service = makeService(
     createStore({
       listForWarden: async () => {
         calls += 1;
@@ -103,7 +103,7 @@ test("list rejects unauthenticated, non-Warden and invalid query requests", asyn
 
 test("get validates the ID, returns records, and maps missing IDs to 404", async () => {
   const requestedIds: string[] = [];
-  const service = new WardenComplaintService(
+  const service = makeService(
     createStore({
       findForWarden: async (id) => {
         requestedIds.push(id);
@@ -127,7 +127,7 @@ test("get validates the ID, returns records, and maps missing IDs to 404", async
 test("start uses verified actor and server time for Pending complaints", async () => {
   let startedBy: string | undefined;
   let startedAt: Date | undefined;
-  const service = new WardenComplaintService(
+  const service = makeService(
     createStore({
       transitionToInProgress: async (id, actorUserId, changedAt) => {
         startedBy = actorUserId;
@@ -146,10 +146,10 @@ test("start uses verified actor and server time for Pending complaints", async (
 });
 
 test("start rejects invalid states and missing complaints", async () => {
-  const resolvedService = new WardenComplaintService(
+  const resolvedService = makeService(
     createStore({ findForWarden: async () => makeRecord({ status: "Resolved" }) }),
   );
-  const missingService = new WardenComplaintService(
+  const missingService = makeService(
     createStore({ findForWarden: async () => null }),
   );
 
@@ -163,7 +163,7 @@ test("start rejects invalid states and missing complaints", async () => {
 });
 
 test("start maps a conditional update failure to a validation error", async () => {
-  const service = new WardenComplaintService(
+  const service = makeService(
     createStore({ transitionToInProgress: async () => null }),
   );
 
@@ -177,7 +177,7 @@ test("resolve validates outcome, uses server time, and stores the trimmed outcom
   let resolvedBy: string | undefined;
   let resolvedAt: Date | undefined;
   let storedOutcome: string | undefined;
-  const service = new WardenComplaintService(
+  const service = makeService(
     createStore({
       findForWarden: async () => makeRecord({ status: "In Progress" }),
       resolveComplaint: async (_id, actorUserId, outcome, changedAt) => {
@@ -200,7 +200,7 @@ test("resolve validates outcome, uses server time, and stores the trimmed outcom
 
 test("resolve rejects blank outcomes and invalid states", async () => {
   let calls = 0;
-  const service = new WardenComplaintService(
+  const service = makeService(
     createStore({
       findForWarden: async () => makeRecord({ status: "In Progress" }),
       resolveComplaint: async () => {
@@ -211,7 +211,7 @@ test("resolve rejects blank outcomes and invalid states", async () => {
   );
 
   const blank = await service.resolve(warden, complaintId, { outcome: "   " });
-  const pendingService = new WardenComplaintService(
+  const pendingService = makeService(
     createStore({ findForWarden: async () => makeRecord() }),
   );
   const invalidState = await pendingService.resolve(warden, complaintId, { outcome: "Done" });
@@ -227,7 +227,7 @@ test("correctUrgency validates input, rejects no-ops, and uses the verified acto
   let correctedBy: string | undefined;
   let correctedAt: Date | undefined;
   let storedReason: string | undefined;
-  const service = new WardenComplaintService(
+  const service = makeService(
     createStore({
       correctUrgency: async (_id, actorUserId, _urgencyFlag, reason, changedAt) => {
         correctedBy = actorUserId;
@@ -258,10 +258,10 @@ test("correctUrgency validates input, rejects no-ops, and uses the verified acto
 });
 
 test("correctUrgency rejects missing complaints and resolved complaints", async () => {
-  const missingService = new WardenComplaintService(
+  const missingService = makeService(
     createStore({ findForWarden: async () => null }),
   );
-  const resolvedService = new WardenComplaintService(
+  const resolvedService = makeService(
     createStore({ findForWarden: async () => makeRecord({ status: "Resolved" }) }),
   );
 
@@ -281,8 +281,14 @@ test("correctUrgency rejects missing complaints and resolved complaints", async 
 });
 
 test("Warden service exposes no escalation or generic status mutation", () => {
-  const service = new WardenComplaintService(createStore());
+  const service = makeService(createStore());
 
   assert.equal("escalate" in service, false);
   assert.equal("updateStatus" in service, false);
 });
+
+function makeService(store: WardenComplaintStore, clock?: () => Date) {
+  return new WardenComplaintService(store, clock, async () => ({
+    houseIds: ["test-house"], intake: false,
+  }));
+}

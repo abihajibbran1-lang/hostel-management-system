@@ -108,7 +108,7 @@ The following is the **planning-level register**, not the final detailed slice s
 | S04 | Shared responsibility coordination and Warden assistance | FR-02, relevant privacy rules | S01, S02, foundational Schedules & Responsibilities room/resident capability | P1 |
 | S05 | Responsibility reminders and incomplete-duty alerts | FR-03, FR-04 | S02, S04, worker foundation | P1 |
 | S06 | Complaint submission and student tracking | FR-07, FR-09, BR-01, BR-04 | S01 | P0 |
-| S07 | Warden complaint management | FR-08, BR-06, complaint lifecycle | S06 | P0 |
+| S07 | Warden complaint management | FR-08, BR-06, complaint lifecycle | S06, verified room and Warden house assignments | P0 |
 | S08 | Complaint escalation and linked complaints | FR-10, FR-11, FR-12; BR-02, BR-03, BR-05, BR-07 | S02, S06, S07, worker foundation | P0 |
 | S09 | Weekly meal menu publishing | FR-15 | S01 | P1 |
 | S10 | Meal reservations and collection arrangements | FR-05, relevant eligibility rules | S02, S09 | P1 |
@@ -137,13 +137,15 @@ Allow a student to create, view, and update their own daily schedule. Enforce pr
 Allow roommates to coordinate agreed shared responsibilities under the Owner-approved S04 workflow, including acceptance, completion, and Request Warden Assistance. S04 remains Planned with its implementation gate CLOSED; implementation is conditional on foundational room/resident capability, S00/S01/S02 readiness, formal decisions, and recorded approval. Preserve the private personal-schedule boundary and pending PRD NFR-01 reconciliation.
 
 #### S05 — Responsibility Reminders and Incomplete-Duty Alerts
-Implement activity reminders 30 minutes before scheduled activities and responsibility reminders 24 hours and 1 hour before deadlines. Exclude completed/cancelled responsibilities. Implement the one-reminder-then-Warden-alert rule only after the team clarifies how automated non-completion timeout is determined.
+Deliver responsibility reminders 24 hours and 1 hour before deadlines through the shared worker. S03 owns the 30-minute activity reminder. For FR-04, evaluate each current accepted part at the first five-minute poll at or after the deadline plus one hour. Require a delivered reminder for that assignment version and recheck state and residency before writing. Deduplicate the staff alert per duty across manual and automatic confirmations.
 
 #### S06 — Complaint Submission and Student Tracking
 Allow identified students to submit complaints with the required category, room number, description, and urgency flag, and view only their own complaint status/outcome. Enforce required fields and ownership boundaries.
 
 #### S07 — Warden Complaint Management
 Allow the Warden to review complaints, update status through the documented lifecycle, and correct urgency/priority flags. Preserve the documented states: `Pending`, `In Progress`, `Resolved`, and `Escalated`; do not add or substitute states without a team decision.
+
+Scope the complaint queue, detail, and writes to the Warden's current house assignments and the complaint's verified house at submission. A designated intake Warden handles complaints with no recorded house, including legacy rows. Keep the staged `Pending → In Progress → Resolved` workflow. History continues to record urgency corrections and staff actions. S08 owns the interpretation of that history for escalation eligibility.
 
 #### S08 — Complaint Escalation and Linked Complaints
 Implement student direct escalation after the approved 18-hour Warden-inactivity condition, automatic escalation after 24 elapsed hours at the first five-minute polling check after the threshold, and new linked complaint records for recurring problems or outcome disagreement as specified by the PRD. The 18-hour eligibility definition remains blocked pending team agreement (see Section 8).
@@ -217,7 +219,7 @@ Do not convert these into assumptions without a recorded team decision. A questi
 | ID | Open question / ambiguity | Current handling | Blocks |
 |---|---|---|---|
 | OQ-01 | What exactly qualifies as Warden inactivity for the 18-hour direct escalation rule? | **Team decision pending.** The team will discuss and agree whether eligibility applies only to complaints remaining `Pending`, or to any active complaint with no Warden action regardless of status, or another definition. Preserve the 18-hour threshold. Do not implement/finalize eligibility logic until the team agrees. | 18-hour eligibility portion of S08 only |
-| OQ-02 | What duration/condition constitutes the automated timeout for confirming responsibility non-completion after the reminder? | Keep the PRD rule visible; obtain team clarification before implementing timeout behavior. | Automated timeout portion of S05 |
+| OQ-02 | What duration/condition constitutes the automated timeout for confirming responsibility non-completion after the reminder? | Resolved by the team. Evaluate eligible accepted parts at the first five-minute poll at or after one hour past the current deadline, with one shared alert per duty. | S05 live worker verification |
 | OQ-03 | What responsibility assignment/state transitions remain unspecified after Warden review, redistribution, withdrawal, and room transfer? | Confirm Owner-approved rules formally; decide only exact statuses and remaining-participant effects not specified in the approved workflow. Do not reopen selected rejection/non-response, material-change reacceptance, withdrawal, transfer, assistance deduplication/reassignment, concurrency, or notification-recipient rules. | Affected S04/S05 behavior |
 | OQ-04 | What eligibility evidence or authorization is required for meal reservations? | Preserve the requirement for students with authorized university commitments; clarify the validation workflow. | Eligibility portion of S10 |
 | OQ-05 | What are the fixed meal portion categories/quantities and what does the Warden verify? | Obtain team-approved operational values and audit rules. | Detailed S11 acceptance criteria |

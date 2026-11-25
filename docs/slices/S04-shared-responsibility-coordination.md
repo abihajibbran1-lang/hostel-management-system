@@ -1,6 +1,15 @@
 # S04 — Shared Responsibility Coordination and Warden Assistance
 
-**Status:** Planned — implementation gate CLOSED | **Owner:** Ifadha Hussain | **Reviewer:** Abiha | **Final S04 approval authority:** Ifadha Hussain (S04 Owner) | **Project Coordinator:** Abiha (separate project-level role) | **Priority:** P1 | **Estimate:** 1.5–2.5 focused development days (provisional)
+**Status:** Testing. Local implementation present. Live initial record verification and acceptance pending | **Owner:** Ifadha Hussain | **Reviewer:** Abiha | **Final S04 approval authority:** Ifadha Hussain (S04 Owner) | **Project Coordinator:** Abiha (separate project-level role) | **Priority:** P1 | **Estimate:** 1.5–2.5 focused development days (provisional)
+
+## Implementation checkpoint
+
+`/responsibilities` supports proposals, Warden creation and distribution, assigned-student decisions and completion, assistance, and review requests. The API offers collection GET/POST and detail GET/PATCH. The assistance page and endpoint are read-only. Scope is checked against verified room membership, participation history, or staff house assignment.
+
+- Workflow notices use S02's transaction-bound dispatch with type `responsibility_update`. Assistance uses `responsibility_assistance`. Partial indexes enforce one current assignment per student per duty and one active assistance record per duty.
+- An approved withdrawal or transfer retires the unfinished part and holds the duty in `Pending Acceptance` for Warden redistribution. Remaining acceptances persist unless material terms affect them. A formatting or spelling edit uses the Warden's wording-only action.
+- An active assistance record follows the current primary Warden in the staff view. Initial dispatch uses the active primary Warden or the active Manager accounts as fallback. A replacement does not create a new assistance event or inbox notification.
+- Live browser, concurrent multi-connection database, recovery, and performance verification remain pending.
 
 ## 1. Goal and traceability
 Allow verified roommates to record and coordinate **agreed shared responsibilities** and request Warden help when coordination fails. This is a complete Student-to-Warden vertical workflow in the **Schedules & Responsibilities** domain.
@@ -20,7 +29,7 @@ Allow verified roommates to record and coordinate **agreed shared responsibiliti
 - The foundational room/resident capability is established before S04 implementation and its initial records are reviewed and verified. S04 consumes current membership and Warden-house authorization through its approved service interface; S04 does not maintain competing room assignments or directly query foundational tables.
 - Each house has one designated primary Warden at a time as a business rule. An active designated primary receives assistance notifications; missing/inactive-primary cases go to the Hostel Manager for active replacement. The technical mapping and interface remain subject to confirmation.
 
-Previously user-approved decisions and the 15 additional Owner-approved resolutions recorded across D01-D12 remain subject to formal team and affected-owner confirmation. The Project Owner-approved consolidated S00-S04 recommendations also require relevant slice-owner confirmation. Approval is separate from implementation, testing, compatibility, and dependency readiness. This does not authorize implementation; the gate remains CLOSED.
+The [S04 Open Decision Register](S04-OPEN-DECISION-REGISTER.md) records Owner authorization and the approval status of the consolidated decisions. The required room/resident foundation, initial record verification and technical compatibility still need evidence.
 
 ## 3. Scope and exclusions
 **In scope:** verify room/active roommate membership through the foundational capability's approved service interface; propose, distribute and coordinate shared responsibilities; list and detail authorized shared responsibilities; completion, reopening and cancellation under the approved rules; Warden assistance request and inbox alert; Warden responsibility management only within the assigned house; and a separate read-only Warden assistance view. S04 does not own or create foundational room/resident records and does not query their tables directly. The Warden assistance view grants no separate resolution or closure action.
@@ -110,4 +119,4 @@ Exact assignment/overall status transitions after Warden review of rejection/non
 9. Can S02 support transaction-bound dispatch? If incompatible, who approves/owns an outbox and its persistence, processing, retry and recovery behavior?
 10. What notification content and audiences apply to changes beyond the selected assignment, completion, cancellation, Warden-change, reopening, transfer, and assistance recipients?
 
-**Definition of done:** formal team and affected-owner confirmation recorded; required S00/S01/S02 dependencies verified; applicable tests and acceptance criteria pass; S02 notification integration and S05 interface proven; privacy and performance evidence recorded; reviewer review by Abiha recorded; final S04 approval by Ifadha Hussain recorded; and project evidence/register updated. If a rule remains open, mark affected criteria blocked. S04 remains Planned and the implementation gate CLOSED until every readiness condition and approval is satisfied.
+**Definition of done:** formal team and affected-owner confirmation recorded; required S00/S01/S02 dependencies verified; applicable tests and acceptance criteria pass; S02 notification integration and S05 interface proven; privacy and performance evidence recorded; reviewer review by Abiha recorded; final S04 acceptance by Ifadha Hussain recorded; and project evidence/register updated. If a rule remains open, mark affected criteria blocked.

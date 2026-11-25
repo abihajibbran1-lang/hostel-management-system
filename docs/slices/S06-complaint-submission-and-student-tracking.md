@@ -10,7 +10,7 @@ S00 scaffold/API/Prisma and S01 Student authentication and ownership checks. App
 
 ## User workflow
 1. Signed-in Student opens **Submit Complaint**.
-2. Form requires category **Water / Hygiene / Pests / Electricity / Facilities**, room number, nonempty description and explicit urgency flag.
+2. Form requires category **Water / Hygiene / Pests / Electricity / Facilities**, room number, nonempty description and explicit urgency flag. For staff routing, the server records the student's verified house at submission, or leaves it empty for intake. The reported room number remains descriptive.
 3. Server validates all fields including the approved room-number format, obtains submitter ID from verified session, creates identified complaint with `Pending` status and server-generated `submitted_at`, and records the initial history entry in one transaction.
 4. Student sees success with the complaint UUID as tracking reference and can view only their own complaints, latest status, submitted details and authorized resolution outcome when available.
 5. Student refreshes/revisits the tracking page to see Warden updates persisted by S07; never sees other students' complaints.

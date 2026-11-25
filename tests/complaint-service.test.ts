@@ -35,7 +35,11 @@ test("create uses the verified student ID, server clock and Pending status", asy
     findOwned: async () => null,
   } as ComplaintStore;
 
-  const service = new ComplaintService(store, () => now);
+  const submittedHouseId = "10000000-0000-4000-8000-000000000001";
+  const service = new ComplaintService(store, () => now, async (userId) => {
+    assert.equal(userId, studentId);
+    return submittedHouseId;
+  });
   const created = await service.create(studentId, {
     category: "Water",
     roomNumber: "A-12",
@@ -44,6 +48,7 @@ test("create uses the verified student ID, server clock and Pending status", asy
   });
 
   assert.equal(receivedWrite?.submittedBy, studentId);
+  assert.equal(receivedWrite?.submittedHouseId, submittedHouseId);
   assert.deepEqual(receivedWrite?.submittedAt, now);
   assert.equal(created.status, "Pending");
 });

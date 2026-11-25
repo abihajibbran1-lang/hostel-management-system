@@ -19,18 +19,34 @@ The exact package versions are pinned in `package.json`; installation creates th
 ## Local setup
 
 1. Copy `.env.example` to `.env`.
-2. Populate `DATABASE_URL` only with credentials obtained through the team’s private process. Never commit `.env`.
+2. Set `DATABASE_URL` and a private random `JWT_SECRET` of at least 32 UTF-8 bytes. Never commit `.env`.
 3. Install dependencies:
 
    ```bash
    npm install
    ```
 
-4. Generate the Prisma client once a valid database configuration is available:
+4. Generate the Prisma client and apply the checked-in migrations to an empty development database:
 
    ```bash
    npx prisma generate
+   npx prisma migrate deploy
    ```
+
+   For a database with existing tables, reconcile its schema and migration history first. In particular,
+   the users migration precedes the notification and schedule migrations.
+
+5. Use the team's controlled account provisioning process to prepare active test accounts with bcrypt
+   password hashes. Open `/login` to sign in. A Manager can provision houses, rooms, Warden assignments,
+   and student room memberships at `/room-management`. Set `COMPLAINT_INTAKE_WARDEN_ID` to the
+   UUID of the active Warden who handles unassigned complaints. Use **Unassigned intake** in the
+   Warden complaint queue for cases without a verified submission house, including older rows
+   without a recorded submission house. An assigned Warden verifies the initial
+   memberships there; a Manager can correct a placement by transferring the student.
+
+6. Open **Shared Responsibilities** after signing in. Students with a verified room can propose
+   duties. Wardens distribute duties to verified residents. Students accept their own assignments
+   and may request Warden assistance. The Warden Assistance page is a read-only queue.
 
 ## Run locally
 
@@ -46,7 +62,13 @@ Start the worker independently in another terminal:
 npm run worker
 ```
 
-The worker schedules a five-minute polling foundation only. It intentionally performs no domain actions and does not write domain tables; later slices must register jobs through owning module services.
+The worker polls every five minutes and calls the Schedules service to deliver private activity
+reminders at the first poll in the 30-minute window before an activity starts. The current
+implementation skips an activity that has already started and treats a changed start time as a new
+reminder event. The same worker delivers responsibility reminders at the approved 24-hour and 1-hour
+thresholds. Students can report non-completion after a delivered reminder. The worker also checks
+accepted assignments one hour after the deadline, requires a delivered reminder for the current
+version, and shares the one-alert-per-duty rule with student reports. Worker attempts are persisted.
 
 ## Validation commands
 

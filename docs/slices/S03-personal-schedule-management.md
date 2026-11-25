@@ -1,5 +1,7 @@
 # S03 — Personal Schedule Management
 
+**25 November checkpoint:** The Schedules service supplies activity reminders to the dedicated worker, which dispatches through S02 and persists attempts. The earlier checklist describes the pre-integration state. Live delivery, restart behavior, browser testing and NFR-02 measurement still need verification.
+
 **Status:** Testing (local verification complete; integration and acceptance pending) | **Provisional owner:** Member 2 | **Reviewer:** Member 3 (confirm with team) | **Priority:** P1 | **Estimate:** 1–2 focused development days (provisional)
 
 ## 1. Goal and traceability

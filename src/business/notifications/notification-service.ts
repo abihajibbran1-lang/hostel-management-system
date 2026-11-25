@@ -1,6 +1,6 @@
-import type { Notification } from "@prisma/client";
+import type { Notification, Prisma } from "@prisma/client";
 
-import { NotificationRepository, type NotificationInboxPage } from "../../data/repositories/notifications/notification-repository.ts";
+import { createNotificationInTransaction, NotificationRepository, type NotificationInboxPage } from "../../data/repositories/notifications/notification-repository.ts";
 import {
   notificationDispatchRequestSchema,
   type NotificationDispatchRequest,
@@ -22,6 +22,10 @@ export class NotificationService {
 
   dispatch(input: unknown) {
     return this.notifications.createOrReturnExisting(notificationDispatchRequestSchema.parse(input));
+  }
+
+  dispatchInTransaction(client: Prisma.TransactionClient, input: unknown) {
+    return createNotificationInTransaction(client, notificationDispatchRequestSchema.parse(input));
   }
 
   listRecipientInbox(userId: string, query: NotificationInboxQuery) {

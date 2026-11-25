@@ -8,6 +8,7 @@ import { prisma } from "../../database/prisma.ts";
 export type ComplaintRecord = {
   id: string;
   submittedBy: string;
+  submittedHouseId?: string | null;
   category: string;
   roomNumber: string;
   description: string;
@@ -34,6 +35,7 @@ export type ComplaintDelegateRecord = Omit<
 
 export type ComplaintWrite = {
   submittedBy: string;
+  submittedHouseId?: string | null;
   category: string;
   roomNumber: string;
   description: string;
@@ -51,7 +53,16 @@ export type ComplaintWhereInput = {
   submittedBy?: string;
   status?: ComplaintStatus | { in: ComplaintStatus[] };
   urgencyFlag?: boolean | { not: boolean };
+  submittedHouseId?: string | null | { in: string[] };
+  OR?: ComplaintWhereInput[];
 };
+
+export type ComplaintScope = { houseIds: string[]; intake: boolean };
+
+function scopedComplaints(scope: ComplaintScope): ComplaintWhereInput {
+  const assigned = { submittedHouseId: { in: scope.houseIds } };
+  return scope.intake ? { OR: [assigned, { submittedHouseId: null }] } : assigned;
+}
 
 export type ComplaintUpdateData = {
   status?: ComplaintStatus;
@@ -262,11 +273,16 @@ export class ComplaintRepository {
     return this.listPage({ submittedBy }, query);
   }
 
-  async listForWarden(query: WardenComplaintQueueQuery): Promise<ComplaintListPage> {
+  async listForWarden(query: WardenComplaintQueueQuery, scope: ComplaintScope): Promise<ComplaintListPage> {
     const where: ComplaintWhereInput = {
+      ...(query.queue === "intake" && scope.intake
+        ? { submittedHouseId: null }
+        : scopedComplaints(query.queue ? { ...scope, intake: false } : scope)),
       ...(query.status ? { status: toPrismaStatus(query.status) } : {}),
       ...(query.urgencyFlag !== undefined ? { urgencyFlag: query.urgencyFlag } : {}),
     };
+    if (query.queue === "intake" && !scope.intake) return { complaints: [] };
+    if (query.cursor && !(await this.find({ ...where, id: query.cursor }))) return { complaints: [] };
 
     return this.listPage(where, query);
   }
@@ -298,8 +314,8 @@ export class ComplaintRepository {
     return this.find({ id, submittedBy });
   }
 
-  async findForWarden(id: string): Promise<ComplaintRecord | null> {
-    return this.find({ id });
+  async findForWarden(id: string, scope: ComplaintScope): Promise<ComplaintRecord | null> {
+    return this.find({ id, ...scopedComplaints(scope) });
   }
 
   private async find(where: ComplaintWhereInput): Promise<ComplaintRecord | null> {
@@ -315,10 +331,11 @@ export class ComplaintRepository {
     id: string,
     actorUserId: string,
     changedAt: Date,
+    scope: ComplaintScope,
   ): Promise<ComplaintRecord | null> {
     return this.updateWithHistory(
       id,
-      { id, status: ComplaintStatus.PENDING },
+      { id, status: ComplaintStatus.PENDING, ...scopedComplaints(scope) },
       { status: ComplaintStatus.IN_PROGRESS },
       {
         oldStatus: ComplaintStatus.PENDING,
@@ -335,10 +352,11 @@ export class ComplaintRepository {
     actorUserId: string,
     outcome: string,
     changedAt: Date,
+    scope: ComplaintScope,
   ): Promise<ComplaintRecord | null> {
     return this.updateWithHistory(
       id,
-      { id, status: ComplaintStatus.IN_PROGRESS },
+      { id, status: ComplaintStatus.IN_PROGRESS, ...scopedComplaints(scope) },
       { status: ComplaintStatus.RESOLVED },
       {
         oldStatus: ComplaintStatus.IN_PROGRESS,
@@ -356,9 +374,10 @@ export class ComplaintRepository {
     urgencyFlag: boolean,
     reason: string,
     changedAt: Date,
+    scope: ComplaintScope,
   ): Promise<ComplaintRecord | null> {
     return this.client.$transaction(async (transactionClient) => {
-      const current = await transactionClient.complaint.findFirst({ where: { id } });
+      const current = await transactionClient.complaint.findFirst({ where: { id, ...scopedComplaints(scope) } });
 
       if (
         !current ||
@@ -373,6 +392,7 @@ export class ComplaintRepository {
           id,
           status: current.status,
           urgencyFlag: { not: urgencyFlag },
+          ...scopedComplaints(scope),
         },
         data: { urgencyFlag },
       });

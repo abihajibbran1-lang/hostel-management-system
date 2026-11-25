@@ -2,6 +2,7 @@ import type {
   ComplaintListQuery,
   CreateComplaintInput,
 } from "./complaint-contract.ts";
+import { RoomService } from "../schedules/room-service.ts";
 import {
   ComplaintRepository,
   type ComplaintListPage,
@@ -18,18 +19,24 @@ export type ComplaintStore = {
 export class ComplaintService {
   private readonly complaints: ComplaintStore;
   private readonly clock: () => Date;
+  private readonly getSubmittedHouseId: (userId: string) => Promise<string | null>;
 
   constructor(
     complaints: ComplaintStore = new ComplaintRepository(),
     clock: () => Date = () => new Date(),
+    getSubmittedHouseId: (userId: string) => Promise<string | null> = async (userId) =>
+      (await new RoomService().getVerifiedMembership(userId))?.houseId ?? null,
   ) {
     this.complaints = complaints;
     this.clock = clock;
+    this.getSubmittedHouseId = getSubmittedHouseId;
   }
 
-  create(userId: string, input: CreateComplaintInput) {
+  async create(userId: string, input: CreateComplaintInput) {
+    const submittedHouseId = await this.getSubmittedHouseId(userId);
     return this.complaints.createWithInitialHistory({
       submittedBy: userId,
+      submittedHouseId,
       category: input.category,
       roomNumber: input.roomNumber,
       description: input.description,

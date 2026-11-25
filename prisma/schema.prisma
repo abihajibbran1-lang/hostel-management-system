@@ -66,6 +66,12 @@ model User {
   assistanceRequests AssistanceRequest[]
   complaints Complaint[]
   complaintStatusHistoryChanges ComplaintStatusHistory[]
+  roomMemberships RoomResident[] @relation("RoomResidentStudent")
+  roomAssignmentActions RoomResident[] @relation("RoomResidentActor")
+  roomTransferActions RoomResident[] @relation("RoomResidentEndActor")
+  roomVerificationActions RoomResident[] @relation("RoomResidentVerifier")
+  primaryWardenOf House[] @relation("PrimaryWarden")
+  houseAssignments HouseWarden[]
 
   @@map("users")
 }
@@ -83,6 +89,7 @@ model PersonalSchedule {
   user           User     @relation(fields: [userId], references: [id])
 
   @@index([userId, startAt])
+  @@index([startAt])
   @@map("personal_schedules")
 }
 
@@ -111,8 +118,8 @@ model Responsibility {
   description        String
   dueAt              DateTime             @map("due_at") @db.Timestamptz(3)
   acceptanceDeadline DateTime?             @map("acceptance_deadline") @db.Timestamptz(3)
-  roomId             String               @map("room_id")
-  houseId            String               @map("house_id")
+  roomId             String               @map("room_id") @db.Uuid
+  houseId            String               @map("house_id") @db.Uuid
   status             ResponsibilityStatus  @default(PENDING_ACCEPTANCE)
   revision           Int                  @default(0)
   completedAt        DateTime?             @map("completed_at") @db.Timestamptz(3)
@@ -122,6 +129,10 @@ model Responsibility {
   createdBy          User                 @relation("ResponsibilityCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
   assignments        ResponsibilityAssignment[]
   assistanceRequests AssistanceRequest[]
+  requests           ResponsibilityReview[]
+  distributedAt      DateTime?            @map("distributed_at") @db.Timestamptz(3)
+  needsRedistribution Boolean             @default(false) @map("needs_redistribution")
+  room               Room                 @relation(fields: [roomId, houseId], references: [id, houseId], onDelete: Restrict)
 
   @@index([roomId, status, dueAt])
   @@index([houseId, status, createdAt])
@@ -139,6 +150,11 @@ model ResponsibilityAssignment {
   completedAt       DateTime?                         @map("completed_at") @db.Timestamptz(3)
   createdAt         DateTime                          @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt         DateTime                          @updatedAt @map("updated_at") @db.Timestamptz(3)
+  reminderVersion   Int                               @default(0) @map("reminder_version")
+  reminderEligibleAt DateTime?                        @map("reminder_eligible_at") @db.Timestamptz(3)
+  lastReminderAt    DateTime?                         @map("last_reminder_at") @db.Timestamptz(3)
+  incompleteConfirmedAt DateTime?                    @map("incomplete_confirmed_at") @db.Timestamptz(3)
+  incompleteConfirmationSource String?               @map("incomplete_confirmation_source")
   responsibility   Responsibility                   @relation(fields: [responsibilityId], references: [id], onDelete: Restrict)
   student           User                              @relation(fields: [studentUserId], references: [id], onDelete: Restrict)
 
@@ -163,6 +179,22 @@ model AssistanceRequest {
   @@map("assistance_requests")
 }
 
+model ResponsibilityReview {
+  id               String         @id @default(uuid()) @db.Uuid
+  responsibilityId String         @map("responsibility_id") @db.Uuid
+  requestedBy      String         @map("requested_by") @db.Uuid
+  kind             String
+  note             String
+  requestedAt      DateTime       @default(now()) @map("requested_at") @db.Timestamptz(3)
+  reviewedBy       String?        @map("reviewed_by") @db.Uuid
+  reviewedAt       DateTime?      @map("reviewed_at") @db.Timestamptz(3)
+  approved         Boolean?
+  responsibility   Responsibility @relation(fields: [responsibilityId], references: [id], onDelete: Restrict)
+
+  @@index([responsibilityId, reviewedAt])
+  @@map("responsibility_reviews")
+}
+
 model Complaint {
   id           String            @id @default(uuid()) @db.Uuid
   submittedBy  String            @map("submitted_by") @db.Uuid
@@ -176,8 +208,11 @@ model Complaint {
   updatedAt    DateTime          @updatedAt @map("updated_at")
   submitter    User              @relation(fields: [submittedBy], references: [id], onDelete: Restrict)
   statusHistory ComplaintStatusHistory[]
+  submittedHouseId String?       @map("submitted_house_id") @db.Uuid
+  submittedHouse   House?        @relation(fields: [submittedHouseId], references: [id], onDelete: Restrict)
 
   @@index([submittedBy, submittedAt])
+  @@index([submittedHouseId, submittedAt])
   @@map("complaints")
 }
 
@@ -194,4 +229,101 @@ model ComplaintStatusHistory {
 
   @@index([complaintId, changedAt])
   @@map("complaint_status_history")
+}
+
+enum WorkerJobStatus {
+  PENDING    @map("Pending")
+  PROCESSING @map("Processing")
+  SUCCEEDED  @map("Succeeded")
+  FAILED     @map("Failed")
+}
+
+model WorkerJobRun {
+  id             String          @id @default(uuid()) @db.Uuid
+  jobType        String          @map("job_type")
+  targetType     String          @map("target_type")
+  targetId       String          @map("target_id") @db.Uuid
+  idempotencyKey String          @unique @map("idempotency_key")
+  scheduledFor   DateTime        @map("scheduled_for")
+  status         WorkerJobStatus @default(PENDING)
+  attemptCount   Int             @default(0) @map("attempt_count")
+  maxAttempts    Int             @default(4) @map("max_attempts")
+  nextAttemptAt  DateTime?       @map("next_attempt_at")
+  lockedAt       DateTime?       @map("locked_at")
+  lockedBy       String?         @map("locked_by")
+  lastError      String?         @map("last_error")
+  completedAt    DateTime?       @map("completed_at")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  @@index([jobType, status, nextAttemptAt])
+  @@index([jobType, status, lockedAt])
+  @@map("worker_job_runs")
+}
+
+model House {
+  id              String  @id @default(uuid()) @db.Uuid
+  name            String  @unique
+  primaryWardenId String? @map("primary_warden_id") @db.Uuid
+  primaryWarden   User?   @relation("PrimaryWarden", fields: [primaryWardenId], references: [id], onDelete: Restrict)
+  rooms           Room[]
+  wardens         HouseWarden[]
+  complaints      Complaint[]
+
+  @@index([primaryWardenId])
+  @@map("houses")
+}
+
+model HouseWarden {
+  houseId String @map("house_id") @db.Uuid
+  userId  String @map("user_id") @db.Uuid
+  house   House  @relation(fields: [houseId], references: [id], onDelete: Restrict)
+  warden  User   @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@id([houseId, userId])
+  @@index([userId])
+  @@map("house_wardens")
+}
+
+model Room {
+  id         String   @id @default(uuid()) @db.Uuid
+  houseId    String   @map("house_id") @db.Uuid
+  roomNumber String   @unique @map("room_number")
+  block      String?
+  floor      String?
+  capacity   Int
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  house      House    @relation(fields: [houseId], references: [id], onDelete: Restrict)
+  residents  RoomResident[]
+  responsibilities Responsibility[]
+
+  @@unique([id, houseId])
+  @@index([houseId])
+  @@map("rooms")
+}
+
+model RoomResident {
+  id           String    @id @default(uuid()) @db.Uuid
+  roomId       String    @map("room_id") @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  assignedAt   DateTime  @map("assigned_at")
+  assignedBy  String    @map("assigned_by") @db.Uuid
+  endedAt      DateTime? @map("ended_at")
+  endedBy      String?   @map("ended_by") @db.Uuid
+  verifiedAt   DateTime? @map("verified_at")
+  verifiedBy   String?   @map("verified_by") @db.Uuid
+  previousId   String?   @unique @map("previous_id") @db.Uuid
+  changeType   String    @map("change_type")
+  room         Room      @relation(fields: [roomId], references: [id], onDelete: Restrict)
+  student      User      @relation("RoomResidentStudent", fields: [userId], references: [id], onDelete: Restrict)
+  actor        User      @relation("RoomResidentActor", fields: [assignedBy], references: [id], onDelete: Restrict)
+  endActor     User?     @relation("RoomResidentEndActor", fields: [endedBy], references: [id], onDelete: Restrict)
+  verifier     User?     @relation("RoomResidentVerifier", fields: [verifiedBy], references: [id], onDelete: Restrict)
+  previous     RoomResident? @relation("RoomResidentTransfer", fields: [previousId], references: [id], onDelete: Restrict)
+  next         RoomResident? @relation("RoomResidentTransfer")
+
+  @@index([roomId, endedAt])
+  @@index([userId])
+  @@map("room_residents")
 }

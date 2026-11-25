@@ -17,6 +17,8 @@ const userB = "9cf1f1b8-89a3-49d3-9e1d-e1e5c9b938f1";
 const wardenId = "c4f2a5c9-7a6b-4e0d-9f31-2a8b5c6d7e90";
 const complaintId = "a4d1490a-bfe8-4a5f-bb5e-6a8fc9b8e0a1";
 const changedAt = new Date("2026-11-24T12:00:00.000Z");
+const scope = { houseIds: ["house-a"], intake: false };
+const housePredicate = { submittedHouseId: { in: scope.houseIds } };
 const submittedAt = new Date("2026-11-24T10:00:00.000Z");
 
 type HistoryRow = {
@@ -34,6 +36,7 @@ function makeDelegateRecord(overrides: Partial<ComplaintDelegateRecord> = {}): C
     submittedBy: userA,
     category: PrismaComplaintCategory.WATER,
     roomNumber: "A-12",
+    submittedHouseId: "house-a",
     description: "Leaking tap",
     urgencyFlag: true,
     status: PrismaComplaintStatus.PENDING,
@@ -46,6 +49,14 @@ function makeDelegateRecord(overrides: Partial<ComplaintDelegateRecord> = {}): C
 }
 
 function matchesWhere(record: ComplaintDelegateRecord, where: ComplaintWhereInput) {
+  if (where.OR && !where.OR.some((predicate) => matchesWhere(record, predicate))) return false;
+  if (where.submittedHouseId !== undefined) {
+    const constraint = where.submittedHouseId;
+    const house = record.submittedHouseId ?? null;
+    if (constraint && typeof constraint === "object"
+      ? !house || !constraint.in.includes(house)
+      : house !== constraint) return false;
+  }
   if (where.id !== undefined && record.id !== where.id) {
     return false;
   }
@@ -299,20 +310,21 @@ test("warden list applies status and urgency filters with shared pagination", as
     limit: 10,
     status: "In Progress",
     urgencyFlag: false,
-  });
+  }, scope);
 
   assert.deepEqual(
     page.complaints.map((complaint) => complaint.id),
     ["id-2"],
   );
   assert.deepEqual(getFindManyArgs()?.where, {
+    ...housePredicate,
     status: PrismaComplaintStatus.IN_PROGRESS,
     urgencyFlag: false,
   });
   assert.equal(getFindManyArgs()?.take, 11);
 });
 
-test("warden detail finds any complaint by ID and maps outcome", async () => {
+test("warden detail finds a complaint in the assigned house and maps outcome", async () => {
   const { client, stored, getFindFirstArgs } = createFakeClient();
   stored.push(
     makeDelegateRecord({
@@ -324,11 +336,11 @@ test("warden detail finds any complaint by ID and maps outcome", async () => {
   );
   const repository = new ComplaintRepository(client);
 
-  const detail = await repository.findForWarden("warden-detail");
+  const detail = await repository.findForWarden("warden-detail", scope);
   assert.equal(detail?.submittedBy, userB);
   assert.equal(detail?.status, "Resolved");
   assert.equal(detail?.outcome, "Resolved by warden");
-  assert.deepEqual(getFindFirstArgs()?.where, { id: "warden-detail" });
+  assert.deepEqual(getFindFirstArgs()?.where, { id: "warden-detail", ...housePredicate });
   assert.equal(await repository.findOwned(userA, "warden-detail"), null);
 });
 
@@ -337,12 +349,12 @@ test("transitionToInProgress updates status and writes actor/time history", asyn
   stored.push(makeDelegateRecord());
   const repository = new ComplaintRepository(client);
 
-  const updated = await repository.transitionToInProgress(complaintId, wardenId, changedAt);
+  const updated = await repository.transitionToInProgress(complaintId, wardenId, changedAt, scope);
 
   assert.equal(updated?.status, "In Progress");
   assert.equal(stored[0].status, PrismaComplaintStatus.IN_PROGRESS);
   assert.deepEqual(getUpdateManyArgs(), {
-    where: { id: complaintId, status: PrismaComplaintStatus.PENDING },
+    where: { id: complaintId, status: PrismaComplaintStatus.PENDING, ...housePredicate },
     data: { status: PrismaComplaintStatus.IN_PROGRESS },
   });
   assert.equal(history.length, 1);
@@ -357,7 +369,7 @@ test("transitionToInProgress rejects a non-Pending complaint", async () => {
   stored[0] = makeDelegateRecord({ status: PrismaComplaintStatus.RESOLVED });
   const repository = new ComplaintRepository(client);
 
-  const updated = await repository.transitionToInProgress(complaintId, wardenId, changedAt);
+  const updated = await repository.transitionToInProgress(complaintId, wardenId, changedAt, scope);
 
   assert.equal(updated, null);
   assert.equal(stored[0].status, PrismaComplaintStatus.RESOLVED);
@@ -374,12 +386,14 @@ test("resolveComplaint stores the outcome in resolved history and returns it", a
     wardenId,
     "Tap repaired and area cleaned",
     changedAt,
+    scope,
   );
 
   assert.equal(resolved?.status, "Resolved");
   assert.equal(resolved?.outcome, "Tap repaired and area cleaned");
   assert.equal(stored[0].status, PrismaComplaintStatus.RESOLVED);
   assert.deepEqual(getUpdateManyArgs()?.where, {
+    ...housePredicate,
     id: complaintId,
     status: PrismaComplaintStatus.IN_PROGRESS,
   });
@@ -389,12 +403,33 @@ test("resolveComplaint stores the outcome in resolved history and returns it", a
   assert.deepEqual(history[0].changedAt, changedAt);
 });
 
+test("house and intake queues hide foreign records and enforce scope on direct writes", async () => {
+  const { client, stored, history } = createFakeClient();
+  stored.push(
+    makeDelegateRecord({ id: "own" }),
+    makeDelegateRecord({ id: "foreign", submittedHouseId: "house-b" }),
+    makeDelegateRecord({ id: "unassigned", submittedHouseId: null }),
+  );
+  const repository = new ComplaintRepository(client);
+  const intake = { ...scope, intake: true };
+
+  assert.deepEqual((await repository.listForWarden({ limit: 10 }, scope)).complaints.map(({ id }) => id), ["own"]);
+  assert.deepEqual((await repository.listForWarden({ limit: 10, queue: "intake" }, intake)).complaints.map(({ id }) => id), ["unassigned"]);
+  assert.deepEqual((await repository.listForWarden({ limit: 10, queue: "intake" }, scope)).complaints, []);
+  assert.equal(await repository.findForWarden("foreign", intake), null);
+  assert.deepEqual((await repository.listForWarden({ limit: 10, cursor: "foreign" }, scope)).complaints, []);
+  assert.equal(await repository.transitionToInProgress("foreign", wardenId, changedAt, scope), null);
+  assert.equal(await repository.resolveComplaint("foreign", wardenId, "Done", changedAt, scope), null);
+  assert.equal(await repository.correctUrgency("foreign", wardenId, false, "Review", changedAt, scope), null);
+  assert.equal(history.length, 0);
+});
+
 test("resolveComplaint rejects a Pending complaint", async () => {
   const { client, stored, history } = createFakeClient();
   stored.push(makeDelegateRecord());
   const repository = new ComplaintRepository(client);
 
-  const resolved = await repository.resolveComplaint(complaintId, wardenId, "Done", changedAt);
+  const resolved = await repository.resolveComplaint(complaintId, wardenId, "Done", changedAt, scope);
 
   assert.equal(resolved, null);
   assert.equal(stored[0].status, PrismaComplaintStatus.PENDING);
@@ -412,6 +447,7 @@ test("correctUrgency writes an auditable JSON reason without changing status", a
     false,
     "Downgraded after recheck",
     changedAt,
+    scope,
   );
 
   assert.equal(updated?.urgencyFlag, false);
@@ -433,7 +469,7 @@ test("correctUrgency rejects no-op and terminal-state updates", async () => {
   const noOp = createFakeClient();
   const noOpRepository = new ComplaintRepository(noOp.client);
   assert.equal(
-    await noOpRepository.correctUrgency(complaintId, wardenId, true, "No change", changedAt),
+    await noOpRepository.correctUrgency(complaintId, wardenId, true, "No change", changedAt, scope),
     null,
   );
   assert.equal(noOp.history.length, 0);
@@ -442,7 +478,7 @@ test("correctUrgency rejects no-op and terminal-state updates", async () => {
   resolved.stored[0] = makeDelegateRecord({ status: PrismaComplaintStatus.RESOLVED });
   const resolvedRepository = new ComplaintRepository(resolved.client);
   assert.equal(
-    await resolvedRepository.correctUrgency(complaintId, wardenId, false, "Too late", changedAt),
+    await resolvedRepository.correctUrgency(complaintId, wardenId, false, "Too late", changedAt, scope),
     null,
   );
   assert.equal(resolved.history.length, 0);
@@ -453,10 +489,10 @@ test("missing complaints return null and write no history", async () => {
   const { client, history } = createFakeClient();
   const repository = new ComplaintRepository(client);
 
-  assert.equal(await repository.findForWarden("missing"), null);
-  assert.equal(await repository.transitionToInProgress("missing", wardenId, changedAt), null);
-  assert.equal(await repository.resolveComplaint("missing", wardenId, "Done", changedAt), null);
-  assert.equal(await repository.correctUrgency("missing", wardenId, false, "Recheck", changedAt), null);
+  assert.equal(await repository.findForWarden("missing", scope), null);
+  assert.equal(await repository.transitionToInProgress("missing", wardenId, changedAt, scope), null);
+  assert.equal(await repository.resolveComplaint("missing", wardenId, "Done", changedAt, scope), null);
+  assert.equal(await repository.correctUrgency("missing", wardenId, false, "Recheck", changedAt, scope), null);
   assert.equal(history.length, 0);
 });
 
@@ -466,7 +502,7 @@ test("a history failure rolls back a status mutation", async () => {
   const repository = new ComplaintRepository(client);
 
   await assert.rejects(
-    repository.transitionToInProgress(complaintId, wardenId, changedAt),
+    repository.transitionToInProgress(complaintId, wardenId, changedAt, scope),
     /history write failed/,
   );
 
@@ -479,7 +515,7 @@ test("a conditional update failure prevents status change and history", async ()
   stored.push(makeDelegateRecord());
   const repository = new ComplaintRepository(client);
 
-  const updated = await repository.transitionToInProgress(complaintId, wardenId, changedAt);
+  const updated = await repository.transitionToInProgress(complaintId, wardenId, changedAt, scope);
 
   assert.equal(updated, null);
   assert.equal(stored[0].status, PrismaComplaintStatus.PENDING);

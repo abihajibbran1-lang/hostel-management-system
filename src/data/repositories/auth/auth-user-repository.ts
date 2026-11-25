@@ -29,6 +29,13 @@ export class AuthUserRepository {
     });
   }
 
+  async listActiveManagerIds() {
+    const users = await this.client.user.findMany({
+      where: { role: "MANAGER", isActive: true }, select: { id: true },
+    });
+    return users.map(({ id }) => id);
+  }
+
   async getAccountStatus(id: string): Promise<AccountStatus | null> {
     const user = await this.client.user.findUnique({
       where: { id },

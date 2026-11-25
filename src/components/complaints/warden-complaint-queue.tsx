@@ -34,7 +34,7 @@ function getActionError(body: ComplaintResponse, fallback: string) {
   }
 }
 
-export function WardenComplaintQueue() {
+export function WardenComplaintQueue({ queue = "house" }: { queue?: "house" | "intake" }) {
   const [complaints, setComplaints] = useState<ComplaintViewItem[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [state, setState] = useState<WardenViewState>("loading");
@@ -55,6 +55,7 @@ export function WardenComplaintQueue() {
 
       try {
         const params = new URLSearchParams();
+        params.set("queue", queue);
         if (statusFilter) {
           params.set("status", statusFilter);
         }
@@ -83,7 +84,7 @@ export function WardenComplaintQueue() {
         setState("network-error");
       }
     },
-    [statusFilter, urgencyFilter],
+    [queue, statusFilter, urgencyFilter],
   );
 
   useEffect(() => {
