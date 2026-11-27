@@ -51,6 +51,7 @@ enum AssistanceRequestStatus {
 }
 
 model User {
+  weeklyMenus WeeklyMenu[]
   id            String         @id @default(uuid()) @db.Uuid
   fullName      String         @map("full_name")
   email         String         @unique
@@ -75,6 +76,46 @@ model User {
   houseAssignments HouseWarden[]
 
   @@map("users")
+}
+
+enum WeeklyMenuStatus {
+  DRAFT     @map("Draft")
+  PUBLISHED @map("Published")
+  ARCHIVED  @map("Archived")
+}
+
+enum MealType {
+  BREAKFAST @map("Breakfast")
+  LUNCH     @map("Lunch")
+  DINNER    @map("Dinner")
+}
+
+model WeeklyMenu {
+  id            String           @id @default(uuid()) @db.Uuid
+  weekStartDate DateTime         @unique @map("week_start_date") @db.Date
+  status        WeeklyMenuStatus @default(DRAFT)
+  createdBy     String           @map("created_by") @db.Uuid
+  creator       User             @relation(fields: [createdBy], references: [id], onDelete: Restrict)
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+  items         MenuItem[]
+
+  @@map("weekly_menus")
+}
+
+model MenuItem {
+  id           String     @id @default(uuid()) @db.Uuid
+  weeklyMenuId String     @map("weekly_menu_id") @db.Uuid
+  weeklyMenu   WeeklyMenu @relation(fields: [weeklyMenuId], references: [id], onDelete: Restrict)
+  mealDate     DateTime   @map("meal_date") @db.Date
+  mealType     MealType   @map("meal_type")
+  itemName     String     @map("item_name")
+  description  String?
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  @@unique([weeklyMenuId, mealDate, mealType])
+  @@map("menu_items")
 }
 
 model PersonalSchedule {

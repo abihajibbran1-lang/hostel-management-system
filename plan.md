@@ -153,6 +153,8 @@ Implement student direct escalation after 18 hours from submission or the latest
 #### S09 — Weekly Meal Menu Publishing
 Allow authorized Kitchen Staff to create, edit, and publish weekly breakfast/lunch/dinner menus by day. Students have read-only menu access. Menu-template edits must not mutate existing reservations or historical allocations.
 
+S09 uses Monday–Sunday in Asia/Karachi with one entry per day and meal type. Publication requires all 21 entries. Authorized Kitchen Staff share the editor and the original creator is recorded. Published edits appear immediately after a successful save and keep slot IDs stable. S10/S11 own snapshot integration and verification.
+
 #### S10 — Meal Reservations and Collection Arrangements
 Allow eligible students to make meal reservations and submit advance collection-difficulty notices. Route these to Kitchen Staff and provide the Warden with a read-only audit copy. Eligibility/proof rules need team clarification before they are treated as settled behavior.
 
@@ -207,7 +209,8 @@ These assignments are temporary and must be confirmed by the five-person team. M
 | Member 1 | S00, S01 | Foundation, authentication, cross-module access consistency |
 | Ifadha Hussain (Member 2) | S03, S04, S05 | Schedules and notification/worker integration; S04 Owner: Ifadha Hussain (Member 2); S04 Reviewer: Abiha; Final S04 approval authority: Ifadha Hussain (S04 Owner) |
 | Member 3 | S06, S07, S08 | Complaint lifecycle and escalation |
-| Member 4 | S09, S10, S11, S13 | Meals and Lost & Found reporting |
+| Abiha | S09 | Weekly meal menu publishing |
+| Member 4 | S10, S11, S13 | Meal reservations, portion audit, and Lost & Found reporting |
 | Member 5 | S12, S14 | Laundry concurrency and Lost & Found verification |
 
 Ownership does not mean working in isolation. Every member should participate in integration testing, review, and understanding the complete product. Avoid making one member the sole gatekeeper for all integrations; agree on shared review and merge practices.

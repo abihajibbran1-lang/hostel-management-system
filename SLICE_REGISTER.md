@@ -54,7 +54,7 @@ The owners below are the **provisional allocation** from the project plan. Confi
 | S06 | Complaint Submission and Student Tracking | Identified complaint creation and student access to own complaint tracking | FR-07, FR-09; BR-01, BR-04; NFR-01, NFR-02, NFR-03 | S01 | Member 3 | Member 4 | P0 | Testing |
 | S07 | Warden Complaint Management | House-scoped Warden review, unassigned intake, priority correction and complaint lifecycle management | FR-08; BR-06; relevant complaint states and PRD workflows | S01, S06, verified room and Warden house assignments | Member 3 | Member 5 | P0 | Testing |
 | S08 | Complaint Escalation and Linked Complaints | Student direct escalation, automatic escalation, linked complaints and assigned Manager queue | FR-10, FR-11, FR-12; BR-02, BR-03, BR-05, BR-07; CON-01; ADR-005 | S01, S02, S06, S07; worker foundation | Abiha | abihajibbran1-lang (requested) | P0 | Testing |
-| S09 | Weekly Meal Menu Publishing | Kitchen Staff create/edit/publish weekly breakfast/lunch/dinner menu; student read-only view | FR-15; BR-12 | S01 | Member 4 | Member 2 | P1 | Planned |
+| S09 | Weekly Meal Menu Publishing | Kitchen Staff create/edit/publish weekly breakfast/lunch/dinner menu; student read-only view | FR-15; BR-12; NFR-01; ADR-004 | S00, S01; final history regression depends on S10/S11 | Abiha | abihajibbran1-lang (requested) | P1 | Testing |
 | S10 | Meal Reservations and Collection Arrangements | Student meal reservations and advance collection-difficulty notices routed to Kitchen Staff; Warden audit copy | FR-05; BR-12; relevant PRD acceptance criteria | S01, S02, S09 | Member 4 | Member 3 | P1 | Planned |
 | S11 | Meal Portion Logging and Audit | Fixed portion allocation logging, Warden verification, discrepancy record | FR-06; BR-09, BR-12; ADR-004 | S01, S09, S10 | Member 4 | Member 5 | P1 | Planned |
 | S12 | Laundry Reservations | Available machine slots, 60-minute reservations, cancellation and atomic prevention of duplicate slot booking | FR-13; BR-10; ADR-002 | S01 | Member 5 | Member 1 | P0 | Planned |
@@ -160,6 +160,7 @@ A slice may move to **Complete** only when:
 | 24 Nov 2026 | S06 implementation and local verification recorded; status set to Testing. Provisional owner/reviewer fields preserved. Real database integration, migration/baseline decision, NFR-02/NFR-03 evidence, and reviewer/coordinator acceptance remain pending. | Student contributor — name to confirm |
 | 24 Nov 2026 | S07 implementation and local verification recorded; status set to Testing. Provisional owner/reviewer fields preserved. Real database/concurrency/browser verification, unresolved decision approvals, NFR evidence, and reviewer/coordinator acceptance remain pending. | Reema Rizwan |
 | 27 Nov 2026 | S08 rules approved and implementation moved to Testing. HTL workflow and a provisional estimate of 2–3 focused days. Browser acceptance and independent review remain pending. | Abiha |
+| 27 Nov 2026 | S09 menu rules approved under HTL and implementation moved to Testing. Estimate remains unconfirmed. Independent review and S10/S11 snapshot verification remain pending. | Abiha |
 
 
 ## 10. Specification drafting update — 15 Nov 2026
