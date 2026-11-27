@@ -1,5 +1,13 @@
 # Workflow Evidence Log
 
+## S09 HTL implementation — 27 November 2026
+
+Abiha approved the plan and menu rules before coding. The chosen weekday boundary, one-entry policy, shared Kitchen Staff role, and immediate published edits are recorded in the S09 specification. The menu write contract preserves existing item IDs, while reservation and portion snapshots remain owned by S10 and S11.
+
+On `feature/s09-weekly-meal-menu`, the full Node suite passed 168 tests, including four new S09 tests. All ten migrations applied to a disposable PostgreSQL instance using PGlite. Direct API and real Prisma checks verified the 21-slot publication rule, draft isolation, uniqueness, batch rollback, immediate edits, and stable item IDs. See [test evidence](test.md). Independent review and the S10/S11 snapshot regression gate remain pending.
+
+Commands: `node --test --experimental-test-isolation=none --test-reporter=spec tests/*.test.ts` (168 passed), `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run build`, and `node node_modules/prisma/build/index.js validate` (all passed). Temporary `node .s09-smoke/verify.mjs` and `node .s09-smoke/browser.mjs` passed. The browser harness was rerun with the documented localhost origin and enough local database connections for both routes and middleware.
+
 | Date | Slice | Mode | Work and human decisions | Verification | Status |
 |---|---|---|---|---|---|
 | 16 Nov 2026 | S00 | HTL | Owner directed implementation after confirming S00 approval. The agent created only the shared foundation; the API response shape is recorded as a proposal pending team review. The owner required no push until testing completed. | `npm.cmd run lint` passed; `npm.cmd run typecheck` passed; `npm.cmd test` passed (1/1); `npm.cmd run build` passed. Web development server returned HTTP 200; worker started separately and reported `*/5 * * * *`. | Testing; pending clean-clone/database verification, peer review, and coordinator acceptance. |
