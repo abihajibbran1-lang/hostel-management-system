@@ -42,9 +42,9 @@ function presentMenu(menu: MenuRecord) {
   };
 }
 
-export async function getPublishedMenu(date: string) {
+export async function getPublishedMenu(date: string, repository = new MenuRepository()) {
   const day = toMenuDate(date);
-  const menu = await new MenuRepository().findPublishedDay(menuWeekStart(day), day);
+  const menu = await repository.findPublishedDay(menuWeekStart(day), day);
   return { date, items: menu ? presentItems(menu.items) : [] };
 }
 

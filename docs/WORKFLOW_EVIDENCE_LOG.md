@@ -1,5 +1,13 @@
 # Workflow Evidence Log
 
+## S10 HTL implementation — 27 November 2026
+
+Abiha approved the reservation and notice policy, supplied the initial Karachi collection windows, and requested configurable hours. The implementation uses Manager-only hour updates and assumes staff verify university commitments outside the app. Server-side approval and snapshot data are recorded independently of the menu. The S10 specification records scope, configuration and setup.
+
+The Node suite command `node --test --experimental-test-isolation=none --test-reporter=dot tests/*.test.ts` passed 171 tests. `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run build` and `node node_modules/prisma/build/index.js validate` passed. Temporary commands `node .s10-smoke/verify.mjs` and `node .s10-smoke/browser.mjs` passed with all twelve migrations on PGlite. An initial browser check used an exact label selector that missed the reservation dropdown. A stable field selector passed the rerun. [Test evidence](test.md) records the boundaries, routing, rollback, snapshot regression and role flows.
+
+S10 remains Testing pending independent review and shared-environment acceptance. The S11 portion-log regression is still pending. The temporary PostgreSQL engine multiplexes connections, so the integration check does not establish multi-session behavior on a standalone PostgreSQL server.
+
 ## S09 HTL implementation — 27 November 2026
 
 Abiha approved the plan and menu rules before coding. The chosen weekday boundary, one-entry policy, shared Kitchen Staff role, and immediate published edits are recorded in the S09 specification. The menu write contract preserves existing item IDs, while reservation and portion snapshots remain owned by S10 and S11.

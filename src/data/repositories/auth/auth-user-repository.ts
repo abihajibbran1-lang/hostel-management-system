@@ -30,8 +30,12 @@ export class AuthUserRepository {
   }
 
   async listActiveManagerIds() {
+    return this.listActiveUserIdsByRole("MANAGER");
+  }
+
+  async listActiveUserIdsByRole(role: UserRole) {
     const users = await this.client.user.findMany({
-      where: { role: "MANAGER", isActive: true }, select: { id: true },
+      where: { role, isActive: true }, select: { id: true },
     });
     return users.map(({ id }) => id);
   }

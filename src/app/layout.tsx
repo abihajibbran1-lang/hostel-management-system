@@ -34,12 +34,16 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             <>
               <Link href="/schedule">My Schedule</Link>
               <Link href="/complaints">My Complaints</Link>
+              <Link href="/meals/arrangements">My meal arrangements</Link>
             </>
           )}
           {role === "WARDEN" && <Link href="/warden/complaints">Complaint Queue</Link>}
+          {role === "WARDEN" && <Link href="/warden/meal-arrangements">Meal audit and approvals</Link>}
           {role === "STUDENT" && <Link href="/meals/menu">Meal menu</Link>}
           {role === "KITCHEN_STAFF" && <Link href="/kitchen/menus">Manage weekly menu</Link>}
+          {role === "KITCHEN_STAFF" && <Link href="/kitchen/meal-arrangements">Meal arrangements</Link>}
           {role === "MANAGER" && <Link href="/manager/complaints">Escalated complaints</Link>}
+          {role === "MANAGER" && <Link href="/manager/meal-collection-windows">Meal collection hours</Link>}
           {(role === "STUDENT" || role === "WARDEN" || role === "MANAGER") && <Link href="/responsibilities">Shared Responsibilities</Link>}
           {role === "WARDEN" && <Link href="/warden/responsibility-assistance">Warden Assistance</Link>}
           {(role === "WARDEN" || role === "MANAGER") && <Link href="/room-management">Room Management</Link>}

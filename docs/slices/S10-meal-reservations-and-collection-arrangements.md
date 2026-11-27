@@ -1,6 +1,6 @@
 # S10 — Meal Reservations and Collection Arrangements
 
-**Status:** Specified; implementation not verified | **Owner:** Member 4 (provisional) | **Reviewer:** Member 3 (proposed) | **Priority:** P1 | **Estimate:** team to confirm
+**Status:** Testing | **Owner:** Abiha | **Requested reviewer:** abihajibbran1-lang | **Priority:** P1 | **Estimate:** team to confirm | **AI workflow:** HTL
 
 ## Goal and traceability
 FR-05, AC-FR-05-01, FR-15, BR-12, NFR-01; ADR-004.
@@ -43,12 +43,24 @@ All route/service names are proposals; reconcile with existing repository contra
 - **AC10-05:** Failed snapshot creation rolls back reservation; notification retries do not duplicate logical alerts.
 - **AC10-06:** Eligibility and advance-notice validation follow approved policy; affected tests remain blocked until policy is recorded.
 
-## Open decisions / blockers
-1. Confirm eligibility evidence for authorized university commitments and who verifies it.
-2. Confirm reservation cutoff, duplicate reservation policy, advance notice timing and fixed portion quantities.
-3. Confirm notice fields, whether notice must reference a reservation, staff recipient routing and permitted cancellation/fulfillment transitions; schema statuses alone do not authorize extra UI actions.
+## Approved decisions
 
-Do not silently select business rules. Continue independent work; mark affected criteria blocked until team approval.
+Abiha approved the policies on 27 November 2026. A Warden verifies a university commitment outside the app and records approval for the student and meal slot. The app retains the approving Warden and timestamp. Wardens can approve within their assigned houses. The Warden designated by `MEAL_INTAKE_WARDEN_ID` handles students without a verified house.
+
+Reservations close at 21:00 Asia/Karachi the previous day. One reservation stores one portion per student, date and meal type, and retries return the original ticket. A notice requires a date, meal type and explanation, with an optional reference to the student's own ticket for that slot. Notices may be sent up to and including one hour before collection starts. A notice retry with the same request ID returns the original record. A changed payload requires a new request ID.
+
+Initial collection hours are breakfast 08:00–09:00, lunch 14:00–15:00 and dinner 20:00–21:00 in Asia/Karachi. Managers maintain these hours in **Meal collection hours**. Changes affect new notice submissions. Previous notices and tickets are preserved.
+
+Active Kitchen Staff receive one notification per reservation or notice per account. If no active Kitchen Staff are available or notification persistence fails, the transaction rolls back and the student can retry. Warden audit copies are read-only and scoped to the verified house recorded at submission or designated intake. The separate Warden approval action does not edit audit records. Cancellation, fulfillment, and S11 portion audit remain outside S10.
+
+## Implementation and manual verification
+
+The migration adds reservation, allocation snapshot, approval, notice and collection-window tables. The existing S09 published menu lookup supplies the slot. S02 notifications commit with the arrangement transaction. The API endpoints in the data section are implemented, alongside `POST /api/warden/meal-approvals` and Manager-only `GET/PATCH /api/manager/meal-collection-windows`. See [test evidence](../test.md).
+
+1. Migrate disposable local PostgreSQL and run `npm.cmd run dev`. Provision Student, Warden, Kitchen Staff and Manager accounts. Verify the student's house and assign its Warden, or configure `MEAL_INTAKE_WARDEN_ID`.
+2. Publish a future S09 menu. In **Meal audit and approvals**, record eligibility for that Student and meal. In **My meal arrangements**, reserve and confirm that the returned ticket has one portion. Repeat the reservation to confirm the same ticket is returned.
+3. Send a notice before the cutoff. Verify the Kitchen Staff queue and inbox and the Warden audit copy. As a Manager, change the opening and closing times and refresh the Student view.
+4. Edit the published menu and check that the existing reservation ticket still contains the original name and portion count.
 
 ## Test plan
 Unit: eligibility and payload validation after approval. PostgreSQL: snapshot atomicity, history integrity, ownership. Integration: S02 routing/retries. E2E: student ticket, Kitchen Staff receipt, Warden read-only audit.

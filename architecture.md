@@ -418,6 +418,13 @@ Accounts referenced by historical records are deactivated rather than physically
 - `meal_type`
 - `status` (Reserved, Cancelled, Fulfilled)
 - `reserved_at` timestamp
+- S10 retains the verified submission house for Warden audit scope. A unique student/date/meal key supports safe reservation retries.
+
+**S10 supporting records**
+
+- `meal_approvals` records the student, meal slot, approving Warden and approval time.
+- `meal_collection_notices` records the student, submission house, meal slot, explanation, optional reservation, submission time and per-student request ID. Kitchen notifications commit in the same transaction.
+- `meal_collection_windows` stores Manager-configured opening and closing times per meal in Asia/Karachi.
 
 **`meal_allocation_snapshots`**
 - `id` UUID primary key
