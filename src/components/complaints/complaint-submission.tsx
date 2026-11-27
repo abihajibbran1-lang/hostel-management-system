@@ -46,6 +46,9 @@ export function ComplaintSubmission() {
   const [form, setForm] = useState<ComplaintForm>(emptyForm);
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [followUp, setFollowUp] = useState<{ id: string; kind: "recurrence" | "disagreement" } | null>(null);
+  const [reason, setReason] = useState("");
+  const [trackingError, setTrackingError] = useState("");
 
   const loadComplaints = useCallback(async (cursor?: string) => {
     setState("loading");
@@ -90,7 +93,7 @@ export function ComplaintSubmission() {
 
     setSaving(true);
     try {
-      const response = await fetch("/api/complaints", {
+      const response = await fetch(followUp ? `/api/complaints/${followUp.id}/follow-ups` : "/api/complaints", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -98,6 +101,7 @@ export function ComplaintSubmission() {
           roomNumber: form.roomNumber,
           description: form.description,
           urgencyFlag: form.urgencyFlag,
+          ...(followUp ? { kind: followUp.kind, ...(followUp.kind === "disagreement" ? { reason } : {}) } : {}),
         }),
       });
       const body = (await response.json()) as ComplaintResponse;
@@ -113,6 +117,8 @@ export function ComplaintSubmission() {
 
       setConfirmation(`Complaint submitted. Tracking reference: ${body.data.complaint.id}`);
       setForm(emptyForm);
+      setFollowUp(null);
+      setReason("");
       await loadComplaints();
     } catch {
       setFormError("Your complaint could not be submitted. Please try again.");
@@ -121,10 +127,50 @@ export function ComplaintSubmission() {
     }
   }
 
+  function startFollowUp(complaint: ComplaintViewItem, kind: "recurrence" | "disagreement") {
+    setFollowUp({ id: complaint.id, kind });
+    setForm({ category: complaint.category, roomNumber: complaint.roomNumber, description: "", urgencyFlag: false });
+    setReason("");
+    setFormError(null);
+    document.getElementById("complaint-category")?.focus();
+  }
+
+  async function escalate(complaint: ComplaintViewItem) {
+    setTrackingError("");
+    setSaving(true);
+    try {
+      const response = await fetch(`/api/complaints/${complaint.id}/escalate`, { method: "POST" });
+      if (!response.ok) {
+        const body = await response.json() as { error?: { details?: { message: string }[] } };
+        setTrackingError(body.error?.details?.[0]?.message ?? "Could not escalate the complaint.");
+        await loadComplaints();
+        return;
+      }
+      setConfirmation("Complaint escalated to the Manager.");
+      await loadComplaints();
+    } catch {
+      setTrackingError("Could not escalate the complaint. Try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <section aria-labelledby="submit-complaint-heading">
-      <h1 id="submit-complaint-heading">Submit a Complaint</h1>
-      <form onSubmit={submitComplaint}>
+      <h1 id="submit-complaint-heading">{followUp ? "Submit a linked complaint" : "Submit a Complaint"}</h1>
+      <form method="post" onSubmit={submitComplaint}>
+        {followUp && (
+          <p>Original complaint: {followUp.id}{" "}
+            <button type="button" disabled={saving} onClick={() => {
+              setFollowUp(null); setForm(emptyForm); setReason(""); setFormError(null);
+            }}>Cancel follow-up</button>
+          </p>
+        )}
+        {followUp?.kind === "disagreement" && (
+          <label>Why do you disagree with the outcome?
+            <textarea value={reason} onChange={(event) => setReason(event.target.value)} required />
+          </label>
+        )}
         <div>
           <label htmlFor="complaint-category">Category</label>
           <select
@@ -177,11 +223,24 @@ export function ComplaintSubmission() {
           Submit complaint
         </button>
       </form>
+      {trackingError && <p role="alert">{trackingError}</p>}
+      <button type="button" disabled={saving} onClick={() => void loadComplaints()}>Refresh complaint status</button>
       <ComplaintTrackingView
         complaints={complaints}
         state={state}
         canLoadMore={state === "ready" && nextCursor !== null}
         confirmation={confirmation}
+        renderActions={(complaint) => (
+          <div className="flex flex-wrap gap-3">
+            {complaint.canEscalate && <button type="button" disabled={saving} onClick={() => void escalate(complaint)}>Escalate to Manager</button>}
+            {complaint.status === "Resolved" && (
+              <>
+                <button type="button" disabled={saving} onClick={() => startFollowUp(complaint, "recurrence")}>Report recurrence</button>
+                <button type="button" disabled={saving} onClick={() => startFollowUp(complaint, "disagreement")}>Disagree with outcome</button>
+              </>
+            )}
+          </div>
+        )}
         onLoadMore={() => {
           if (nextCursor) {
             void loadComplaints(nextCursor);

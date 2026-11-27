@@ -37,6 +37,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             </>
           )}
           {role === "WARDEN" && <Link href="/warden/complaints">Complaint Queue</Link>}
+          {role === "MANAGER" && <Link href="/manager/complaints">Escalated complaints</Link>}
           {(role === "STUDENT" || role === "WARDEN" || role === "MANAGER") && <Link href="/responsibilities">Shared Responsibilities</Link>}
           {role === "WARDEN" && <Link href="/warden/responsibility-assistance">Warden Assistance</Link>}
           {(role === "WARDEN" || role === "MANAGER") && <Link href="/room-management">Room Management</Link>}

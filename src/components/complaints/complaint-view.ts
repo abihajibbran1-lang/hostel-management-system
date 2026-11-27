@@ -9,6 +9,8 @@ export type ComplaintViewItem = {
   status: string;
   outcome: string | null;
   submittedAt: string;
+  originalComplaintId?: string;
+  canEscalate?: boolean;
 };
 
 export type ComplaintTrackingState =
@@ -23,6 +25,7 @@ type ComplaintTrackingViewProps = {
   canLoadMore: boolean;
   confirmation: string | null;
   onLoadMore: () => void;
+  renderActions?: (complaint: ComplaintViewItem) => ReactNode;
 };
 
 function renderStatus(state: ComplaintTrackingState): ReactNode | undefined {
@@ -47,6 +50,7 @@ export function ComplaintTrackingView({
   canLoadMore,
   confirmation,
   onLoadMore,
+  renderActions,
 }: ComplaintTrackingViewProps) {
   const heading = createElement(
     "h1",
@@ -91,6 +95,9 @@ export function ComplaintTrackingView({
           ),
           createElement("p", { key: "room" }, `Room: ${complaint.roomNumber}`),
           createElement("p", { key: "description" }, complaint.description),
+          complaint.originalComplaintId
+            ? createElement("p", { key: "original" }, `Original complaint: ${complaint.originalComplaintId}`)
+            : null,
           complaint.urgencyFlag
             ? createElement("p", { key: "urgency" }, "Marked urgent")
             : null,
@@ -102,6 +109,7 @@ export function ComplaintTrackingView({
             { dateTime: complaint.submittedAt, key: "submitted" },
             new Date(complaint.submittedAt).toLocaleString(),
           ),
+          createElement("div", { key: "actions" }, renderActions?.(complaint)),
         ]),
       ),
     ),

@@ -70,6 +70,10 @@ thresholds. Students can report non-completion after a delivered reminder. The w
 accepted assignments one hour after the deadline, requires a delivered reminder for the current
 version, and shares the one-alert-per-duty rule with student reports. Worker attempts are persisted.
 
+For complaint escalation, set `COMPLAINT_ESCALATION_MANAGER_ID` to the UUID of the existing
+active Manager designated for S08. Run the worker alongside the app. The Manager can view
+assigned cases under **Escalated complaints**. See the [S08 verification steps](docs/slices/S08-complaint-escalation-and-linked-complaints.md#manual-verification).
+
 ## Validation commands
 
 ```bash

@@ -148,7 +148,7 @@ Allow the Warden to review complaints, update status through the documented life
 Scope the complaint queue, detail, and writes to the Warden's current house assignments and the complaint's verified house at submission. A designated intake Warden handles complaints with no recorded house, including legacy rows. Keep the staged `Pending → In Progress → Resolved` workflow. History continues to record urgency corrections and staff actions. S08 owns the interpretation of that history for escalation eligibility.
 
 #### S08 — Complaint Escalation and Linked Complaints
-Implement student direct escalation after the approved 18-hour Warden-inactivity condition, automatic escalation after 24 elapsed hours at the first five-minute polling check after the threshold, and new linked complaint records for recurring problems or outcome disagreement as specified by the PRD. The 18-hour eligibility definition remains blocked pending team agreement (see Section 8).
+Implement student direct escalation after 18 hours from submission or the latest recorded Warden action on an active complaint, automatic escalation at the first five-minute poll at or after 24 hours from submission, and new linked complaints for recurrence or outcome disagreement. Route escalation to the designated active Manager and expose an assigned-only, read-only queue.
 
 #### S09 — Weekly Meal Menu Publishing
 Allow authorized Kitchen Staff to create, edit, and publish weekly breakfast/lunch/dinner menus by day. Students have read-only menu access. Menu-template edits must not mutate existing reservations or historical allocations.
@@ -218,7 +218,7 @@ Do not convert these into assumptions without a recorded team decision. A questi
 
 | ID | Open question / ambiguity | Current handling | Blocks |
 |---|---|---|---|
-| OQ-01 | What exactly qualifies as Warden inactivity for the 18-hour direct escalation rule? | **Team decision pending.** The team will discuss and agree whether eligibility applies only to complaints remaining `Pending`, or to any active complaint with no Warden action regardless of status, or another definition. Preserve the 18-hour threshold. Do not implement/finalize eligibility logic until the team agrees. | 18-hour eligibility portion of S08 only |
+| OQ-01 | What exactly qualifies as Warden inactivity for the 18-hour direct escalation rule? | **Resolved.** Apply the rule to Pending and In Progress. Submission starts the clock. A recorded Warden status or urgency change resets the clock and removes the old unlock. Viewing the record has no effect. | S08 |
 | OQ-02 | What duration/condition constitutes the automated timeout for confirming responsibility non-completion after the reminder? | Resolved by the team. Evaluate eligible accepted parts at the first five-minute poll at or after one hour past the current deadline, with one shared alert per duty. | S05 live worker verification |
 | OQ-03 | What responsibility assignment/state transitions remain unspecified after Warden review, redistribution, withdrawal, and room transfer? | Confirm Owner-approved rules formally; decide only exact statuses and remaining-participant effects not specified in the approved workflow. Do not reopen selected rejection/non-response, material-change reacceptance, withdrawal, transfer, assistance deduplication/reassignment, concurrency, or notification-recipient rules. | Affected S04/S05 behavior |
 | OQ-04 | What eligibility evidence or authorization is required for meal reservations? | Preserve the requirement for students with authorized university commitments; clarify the validation workflow. | Eligibility portion of S10 |
@@ -232,7 +232,7 @@ Do not convert these into assumptions without a recorded team decision. A questi
 
 **Status: Open — team discussion required.**
 
-The team has proposed leaving the interpretation to a collective team decision. No interpretation has been selected yet. The 18-hour threshold itself remains part of FR-10/BR-05. The separate 24-hour automatic escalation rule remains unchanged and must not be conflated with the 18-hour manual escalation rule.
+On 27 November 2026, Abiha approved the S08 plan and the four proposed policies for inactivity, Manager routing, disagreement follow-ups, and the read-only Manager workflow. The separate 24-hour automatic escalation clock is fixed at submission.
 
 Once agreed, record:
 - The exact qualifying complaint statuses.
@@ -252,7 +252,7 @@ This is a capacity-aware starting proposal, not a guarantee. Adjust it after the
 | 3 | First user workflows | S03, S04, S06 (S04 actual implementation only after the foundational room/resident capability and its dependencies are verified) |
 | 4 | Complaint operations and module foundations | S07, S09, S12 foundation |
 | 5 | Reminder/meal/lost-found workflows | S05, S10, S13 |
-| 6 | Escalation, audit, laundry completion | S08 (except unresolved 18h logic), S11, S12 |
+| 6 | Escalation, audit, laundry completion | S08, S11, S12 |
 | 7 | Claims and integration | S14; cross-module integration |
 | 8 | Regression and remaining feature gaps | Complete remaining in-scope work; fix integration defects |
 | 9 | Feature freeze target | Acceptance review, final required feature fixes, freeze |
@@ -361,7 +361,7 @@ The repository owner must invite the other team members and assign appropriate G
 ## Immediate Next Actions
 
 1. Team reviews and confirms the slice register, priorities, ownership, and schedule.
-2. Team discusses OQ-01 and records the agreed 18-hour Warden inactivity definition before implementing that part of S08.
+2. Verify the recorded S08 18-hour inactivity and 24-hour escalation rules during the local worker demonstration.
 3. Prepare detailed slice specifications for S00 and S01, including preconditions, task breakdown, acceptance criteria, tests, and evidence requirements.
 4. Create the README and workflow/contribution log skeletons in the repository.
 5. Start implementation only when S00/S01 meet the Definition of Ready.

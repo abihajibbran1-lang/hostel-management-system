@@ -401,12 +401,12 @@ The documented flow is:
 ### 13.3 FR-10 — Direct Escalation flow
 The PRD flow states:
 1. Eighteen hours elapse without Warden response on a pending complaint.
-2. The system detects 18 hours elapsed with zero status change from the Warden.
+2. At the first eligible poll, the system detects 18 hours since submission or the last recorded Warden action.
 3. The system enables the **Escalate to Manager** button on the student's tracking UI.
 4. The student selects the button.
 5. The system updates status to `Escalated` and assigns the record to the Manager queue.
 
-**AC-FR-10-01:** Given a complaint has remained in `Pending` state for 18 elapsed hours, when the student selects direct escalation, update the status to `Escalated` and transfer it to the Manager queue.
+**AC-FR-10-01:** Given an active complaint has a current worker-recorded 18-hour unlock, when the owner selects direct escalation, change its status to `Escalated` and assign it to the designated Manager.
 
 ### 13.4 Meal reservation receipt
 **AC-FR-05-01:** When a student submits a meal reservation for university commitments, route the record to Kitchen Staff and generate a confirmation ticket for the student.
@@ -417,26 +417,9 @@ The PRD flow states:
 ### 13.6 Outcome disagreement and linked complaint
 **AC-FR-10-02:** When a student disagrees with a resolved outcome and submits a follow-up complaint, create a new `Pending` complaint containing a mandatory reference to `Original_Complaint_ID`.
 
-## 14. Unresolved Requirement Ambiguity: 18-Hour Direct Escalation
+## 14. Approved S08 Interpretation: 18-Hour Direct Escalation
 
-The PRD contains related but not fully identical descriptions of the 18-hour condition:
-
-- **FR-10:** direct escalation is allowed if no Warden action occurs within 18 hours.
-- **BR-05:** direct escalation unlocks after 18 hours of Warden inactivity.
-- **Glossary:** direct escalation occurs after 18 hours of Warden inactivity or upon submitting a linked follow-up complaint.
-- **Main user flow:** 18 hours elapse without Warden response on a pending complaint, with zero status change from the Warden.
-- **AC-FR-10-01:** a complaint has remained in `Pending` state for 18 elapsed hours.
-
-These statements do not fully settle eligibility for every complaint status and follow-up scenario.
-
-**Coding-agent instruction:**
-- Preserve the 18-hour threshold.
-- Do not independently define “Warden inactivity.”
-- Do not assume that every complaint status is equivalent to `Pending`.
-- Do not remove the linked follow-up complaint behavior.
-- Ask the project team to confirm the exact eligibility condition before implementing behavior that depends on the unresolved interpretation.
-- Keep the 24-hour automatic escalation rule separate; do not alter it to work around this ambiguity.
-- Both 18-hour and 24-hour thresholds are evaluated in the same five-minute polling cycle. The worker acts at the first polling check after the threshold; this scheduling decision does not resolve the underlying meaning of Warden inactivity.
+The approved S08 rule applies to `Pending` and `In Progress` complaints. Submission starts the 18-hour clock. Recorded Warden status changes and urgency corrections reset it and invalidate any existing unlock. Viewing the complaint has no effect. The worker records eligibility for the student action. A new linked disagreement complaint with a nonblank reason permits explicit student escalation without waiting 18 hours. See the PRD and plan decision record.
 
 The 24-hour rule is measured from complaint submission. If the complaint remains unresolved after 24 elapsed hours, automatic escalation occurs at the first scheduled polling check after that threshold.
 
@@ -468,7 +451,7 @@ The following remain unspecified or implementation-level and must not be invente
 - Detailed module service method signatures and dependency-injection implementation.
 - Detailed production monitoring/alerting configuration.
 
-The 18-hour eligibility condition retains the clarification recorded in Section 14: do not silently redefine Warden inactivity. The polling cadence is settled, but the underlying business eligibility rule must follow the PRD/team clarification.
+Follow the approved PRD definition of Warden inactivity recorded in Section 14.
 
 Use existing repository conventions where they are present and do not conflict with the approved sources. Where a missing decision affects correctness, security, or an architectural boundary, ask the project team before proceeding.
 

@@ -32,7 +32,7 @@ export class ComplaintService {
     this.getSubmittedHouseId = getSubmittedHouseId;
   }
 
-  async create(userId: string, input: CreateComplaintInput) {
+  async create(userId: string, input: CreateComplaintInput, link?: { originalComplaintId: string; disagreementReason?: string }) {
     const submittedHouseId = await this.getSubmittedHouseId(userId);
     return this.complaints.createWithInitialHistory({
       submittedBy: userId,
@@ -42,6 +42,7 @@ export class ComplaintService {
       description: input.description,
       urgencyFlag: input.urgencyFlag,
       submittedAt: this.clock(),
+      ...link,
     });
   }
 

@@ -66,6 +66,7 @@ model User {
   assistanceRequests AssistanceRequest[]
   complaints Complaint[]
   complaintStatusHistoryChanges ComplaintStatusHistory[]
+  assignedComplaints Complaint[] @relation("ComplaintManager")
   roomMemberships RoomResident[] @relation("RoomResidentStudent")
   roomAssignmentActions RoomResident[] @relation("RoomResidentActor")
   roomTransferActions RoomResident[] @relation("RoomResidentEndActor")
@@ -210,9 +211,21 @@ model Complaint {
   statusHistory ComplaintStatusHistory[]
   submittedHouseId String?       @map("submitted_house_id") @db.Uuid
   submittedHouse   House?        @relation(fields: [submittedHouseId], references: [id], onDelete: Restrict)
+  originalComplaintId String?    @map("original_complaint_id") @db.Uuid
+  originalComplaint Complaint?   @relation("ComplaintFollowUps", fields: [originalComplaintId], references: [id], onDelete: Restrict)
+  followUps Complaint[]           @relation("ComplaintFollowUps")
+  disagreementReason String?     @map("disagreement_reason")
+  assignedManagerId String?      @map("assigned_manager_id") @db.Uuid
+  assignedManager User?          @relation("ComplaintManager", fields: [assignedManagerId], references: [id], onDelete: Restrict)
+  manualEscalationEligibleAt DateTime? @map("manual_escalation_eligible_at")
+  manualEscalationRequestedAt DateTime? @map("manual_escalation_requested_at")
+  autoEscalatedAt DateTime? @map("auto_escalated_at")
 
   @@index([submittedBy, submittedAt])
   @@index([submittedHouseId, submittedAt])
+  @@index([status, submittedAt])
+  @@index([assignedManagerId, submittedAt])
+  @@index([originalComplaintId])
   @@map("complaints")
 }
 

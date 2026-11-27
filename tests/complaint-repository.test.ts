@@ -355,7 +355,7 @@ test("transitionToInProgress updates status and writes actor/time history", asyn
   assert.equal(stored[0].status, PrismaComplaintStatus.IN_PROGRESS);
   assert.deepEqual(getUpdateManyArgs(), {
     where: { id: complaintId, status: PrismaComplaintStatus.PENDING, ...housePredicate },
-    data: { status: PrismaComplaintStatus.IN_PROGRESS },
+    data: { status: PrismaComplaintStatus.IN_PROGRESS, manualEscalationEligibleAt: null },
   });
   assert.equal(history.length, 1);
   assert.equal(history[0].oldStatus, PrismaComplaintStatus.PENDING);

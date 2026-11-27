@@ -128,6 +128,8 @@ The system shall allow students to view the real-time status and outcome of thei
 ### FR-10 — Direct Complaint Escalation
 The system shall allow a student to directly escalate an active complaint to the Hostel Manager if no warden action occurs within 18 hours[cite: 2]. If a student disagrees with an outcome, the system shall allow submitting a new complaint linked to the `Original_Complaint_ID` and escalating it directly[cite: 2].
 
+For S08, an active complaint is `Pending` or `In Progress`. Inactivity starts at submission and resets when the Warden records a status change or urgency correction. Viewing a complaint does not reset it. New Warden activity clears a previously recorded inactivity unlock. A student who submits a disagreement follow-up with a nonblank reason can explicitly escalate that new `Pending` complaint immediately. A recurrence follows the usual timeline.
+
 ### FR-11 — Automatic Escalation of Unresolved Complaints
 The system shall monitor active complaints and automatically escalate any complaint that remains unresolved after 24 elapsed hours to the Hostel Manager at the first scheduled five-minute polling check after that threshold[cite: 2].
 
@@ -205,7 +207,7 @@ The system shall maintain 99.0% operational availability on a monthly basis duri
 **Success:** Complaint recorded with initial status `Pending`[cite: 2].
 
 ### Flow for FR-10 — Direct Escalation (18-Hour Trigger)
-**Trigger:** 18 hours elapse without Warden response on a pending complaint[cite: 2].  
+**Trigger:** An active complaint reaches 18 hours since submission or the most recent recorded Warden action.
 **Actors:** Student, Manager[cite: 2].  
 1. The scheduled worker evaluates the complaint at five-minute intervals and marks it eligible at the first check after 18 hours of Warden inactivity have elapsed[cite: 2].  
 2. System enables "Escalate to Manager" button on student tracking UI after eligibility is recorded[cite: 2].  
