@@ -9,6 +9,9 @@ export type ComplaintRecord = {
   id: string;
   submittedBy: string;
   submittedHouseId?: string | null;
+  originalComplaintId?: string | null;
+  disagreementReason?: string | null;
+  manualEscalationEligibleAt?: Date | null;
   category: string;
   roomNumber: string;
   description: string;
@@ -36,6 +39,8 @@ export type ComplaintDelegateRecord = Omit<
 export type ComplaintWrite = {
   submittedBy: string;
   submittedHouseId?: string | null;
+  originalComplaintId?: string;
+  disagreementReason?: string;
   category: string;
   roomNumber: string;
   description: string;
@@ -67,6 +72,7 @@ function scopedComplaints(scope: ComplaintScope): ComplaintWhereInput {
 export type ComplaintUpdateData = {
   status?: ComplaintStatus;
   urgencyFlag?: boolean;
+  manualEscalationEligibleAt?: null;
 };
 
 const prismaCategoryByValue: Record<string, ComplaintCategory> = {
@@ -336,7 +342,7 @@ export class ComplaintRepository {
     return this.updateWithHistory(
       id,
       { id, status: ComplaintStatus.PENDING, ...scopedComplaints(scope) },
-      { status: ComplaintStatus.IN_PROGRESS },
+      { status: ComplaintStatus.IN_PROGRESS, manualEscalationEligibleAt: null },
       {
         oldStatus: ComplaintStatus.PENDING,
         newStatus: ComplaintStatus.IN_PROGRESS,
@@ -357,7 +363,7 @@ export class ComplaintRepository {
     return this.updateWithHistory(
       id,
       { id, status: ComplaintStatus.IN_PROGRESS, ...scopedComplaints(scope) },
-      { status: ComplaintStatus.RESOLVED },
+      { status: ComplaintStatus.RESOLVED, manualEscalationEligibleAt: null },
       {
         oldStatus: ComplaintStatus.IN_PROGRESS,
         newStatus: ComplaintStatus.RESOLVED,
@@ -394,7 +400,7 @@ export class ComplaintRepository {
           urgencyFlag: { not: urgencyFlag },
           ...scopedComplaints(scope),
         },
-        data: { urgencyFlag },
+        data: { urgencyFlag, manualEscalationEligibleAt: null },
       });
 
       if (result.count === 0) {

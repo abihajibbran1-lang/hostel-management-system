@@ -53,7 +53,7 @@ The owners below are the **provisional allocation** from the project plan. Confi
 | S05 | Responsibility Reminders and Incomplete-Duty Alerts | Scheduled reminders and one staff alert per duty after a delivered reminder and confirmed non-completion | FR-03, FR-04; BR-08; architecture worker rules; ADR-005 | S02, S04; S00 worker foundation | Member 2 | Member 5 | P1 | Testing |
 | S06 | Complaint Submission and Student Tracking | Identified complaint creation and student access to own complaint tracking | FR-07, FR-09; BR-01, BR-04; NFR-01, NFR-02, NFR-03 | S01 | Member 3 | Member 4 | P0 | Testing |
 | S07 | Warden Complaint Management | House-scoped Warden review, unassigned intake, priority correction and complaint lifecycle management | FR-08; BR-06; relevant complaint states and PRD workflows | S01, S06, verified room and Warden house assignments | Member 3 | Member 5 | P0 | Testing |
-| S08 | Complaint Escalation and Linked Complaints | Student direct escalation, automatic escalation, recurring/new linked complaints and audit linkage | FR-10, FR-11, FR-12; BR-02, BR-03, BR-05, BR-07; CON-01; ADR-005 | S01, S02, S06, S07; worker foundation | Member 3 | Member 1 | P0 | Planned |
+| S08 | Complaint Escalation and Linked Complaints | Student direct escalation, automatic escalation, linked complaints and assigned Manager queue | FR-10, FR-11, FR-12; BR-02, BR-03, BR-05, BR-07; CON-01; ADR-005 | S01, S02, S06, S07; worker foundation | Abiha | abihajibbran1-lang (requested) | P0 | Testing |
 | S09 | Weekly Meal Menu Publishing | Kitchen Staff create/edit/publish weekly breakfast/lunch/dinner menu; student read-only view | FR-15; BR-12 | S01 | Member 4 | Member 2 | P1 | Planned |
 | S10 | Meal Reservations and Collection Arrangements | Student meal reservations and advance collection-difficulty notices routed to Kitchen Staff; Warden audit copy | FR-05; BR-12; relevant PRD acceptance criteria | S01, S02, S09 | Member 4 | Member 3 | P1 | Planned |
 | S11 | Meal Portion Logging and Audit | Fixed portion allocation logging, Warden verification, discrepancy record | FR-06; BR-09, BR-12; ADR-004 | S01, S09, S10 | Member 4 | Member 5 | P1 | Planned |
@@ -117,7 +117,7 @@ Do not convert these into implementation assumptions without a recorded team dec
 
 | ID | Open item | Impact | Handling |
 |---|---|---|---|
-| OQ-01 | Exact business definition of Warden inactivity for the 18-hour direct-escalation condition | S08 | Preserve the 18-hour threshold and five-minute polling behavior. Team must define which complaint statuses qualify, what Warden actions count as activity, and when the inactivity clock starts/resets. Do not finalize eligibility logic until decided. |
+| OQ-01 | Exact business definition of Warden inactivity for the 18-hour direct-escalation condition | S08 | Resolved on 27 Nov 2026. Pending and In Progress qualify. Submission starts the clock, and recorded Warden status or urgency actions reset it and revoke an existing unlock. |
 | OQ-02 | How system timeout confirms responsibility non-completion under FR-04 | S05 | Resolved. At the first poll at or after the deadline plus one hour, evaluate each eligible accepted part with a reminder for its current version. Share the one-alert-per-duty rule with self-reports. |
 | OQ-03 | Remaining S04 responsibility assignment/state transitions after Warden review, redistribution, withdrawal, and room transfer | S04/S05 | Formally confirm Owner-approved rules; resolve only exact statuses and remaining-participant effects not specified. Do not reopen selected rejection/non-response, material-change reacceptance, withdrawal, transfer, assistance deduplication/reassignment, concurrency, or notification-recipient rules. |
 | OQ-04 | Meal reservation eligibility and acceptable proof for university commitments | S10 | Clarify before finalizing validation and acceptance criteria. |
@@ -159,6 +159,7 @@ A slice may move to **Complete** only when:
 | 21 Nov 2026 | S03 implementation and local verification checkpoint recorded; status set to Testing. Existing provisional owner/reviewer fields were preserved. PostgreSQL integration, browser end-to-end testing, NFR-02 measurement, S02/S05 reminder agreement, and reviewer/coordinator acceptance remain pending. | Ifadha Hussain |
 | 24 Nov 2026 | S06 implementation and local verification recorded; status set to Testing. Provisional owner/reviewer fields preserved. Real database integration, migration/baseline decision, NFR-02/NFR-03 evidence, and reviewer/coordinator acceptance remain pending. | Student contributor — name to confirm |
 | 24 Nov 2026 | S07 implementation and local verification recorded; status set to Testing. Provisional owner/reviewer fields preserved. Real database/concurrency/browser verification, unresolved decision approvals, NFR evidence, and reviewer/coordinator acceptance remain pending. | Reema Rizwan |
+| 27 Nov 2026 | S08 rules approved and implementation moved to Testing. HTL workflow and a provisional estimate of 2–3 focused days. Browser acceptance and independent review remain pending. | Abiha |
 
 
 ## 10. Specification drafting update — 15 Nov 2026

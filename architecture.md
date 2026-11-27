@@ -255,7 +255,7 @@ A Node.js worker process uses node-cron to initiate a polling cycle every five m
 - Resolved or otherwise ineligible complaints are not escalated.
 - Repeated polling must be idempotent and must not duplicate state transitions or notifications.
 
-The precise definition of Warden inactivity remains governed by the PRD and its unresolved clarification; do not silently redefine it as merely remaining in `Pending` if the approved workflow requires a different condition.
+The PRD defines Warden inactivity for Pending and In Progress complaints. Recorded Warden status or urgency changes reset the 18-hour clock. S08 derives the latest action from complaint status history. The 24-hour policy remains tied to submission.
 
 ### 14.2 Responsibility reminders
 

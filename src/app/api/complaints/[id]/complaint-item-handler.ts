@@ -1,5 +1,5 @@
 import { complaintIdSchema } from "../../../../business/modules/complaints/complaint-contract.ts";
-import { toComplaintResponse } from "../../../../business/modules/complaints/complaint-response.ts";
+import { toStudentComplaintResponse } from "../../../../business/modules/complaints/complaint-response.ts";
 import { ComplaintService } from "../../../../business/modules/complaints/complaint-service.ts";
 import {
   apiInternalError,
@@ -37,7 +37,7 @@ export function createComplaintGetHandler(complaintService?: ComplaintItemPort) 
       );
 
       return complaint
-        ? apiSuccess({ complaint: toComplaintResponse(complaint) })
+        ? apiSuccess({ complaint: toStudentComplaintResponse(complaint) })
         : apiNotFound();
     } catch {
       return apiInternalError();

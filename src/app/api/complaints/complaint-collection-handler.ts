@@ -3,7 +3,7 @@ import {
   complaintCursorQuerySchema,
   encodeComplaintCursor,
 } from "../../../business/modules/complaints/complaint-contract.ts";
-import { toComplaintResponse } from "../../../business/modules/complaints/complaint-response.ts";
+import { toStudentComplaintResponse } from "../../../business/modules/complaints/complaint-response.ts";
 import { ComplaintService } from "../../../business/modules/complaints/complaint-service.ts";
 import {
   apiForbidden,
@@ -46,7 +46,7 @@ export function createComplaintListHandler(complaintService?: ComplaintCollectio
       );
 
       return apiSuccess({
-        complaints: page.complaints.map(toComplaintResponse),
+        complaints: page.complaints.map(toStudentComplaintResponse),
         nextCursor: page.nextCursor ? encodeComplaintCursor(page.nextCursor) : null,
       });
     } catch {
@@ -80,7 +80,7 @@ export function createComplaintCreateHandler(complaintService?: ComplaintCollect
 
       return apiSuccess(
         {
-          complaint: toComplaintResponse(complaint),
+          complaint: toStudentComplaintResponse(complaint),
           trackingReference: complaint.id,
         },
         201,

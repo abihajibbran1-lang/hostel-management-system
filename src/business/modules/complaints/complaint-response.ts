@@ -14,3 +14,14 @@ export function toComplaintResponse(complaint: ComplaintRecord) {
     createdAt: complaint.createdAt,
   };
 }
+
+export function toStudentComplaintResponse(complaint: ComplaintRecord) {
+  return {
+    ...toComplaintResponse(complaint),
+    ...(complaint.originalComplaintId ? { originalComplaintId: complaint.originalComplaintId } : {}),
+    ...(complaint.status === "Pending" || complaint.status === "In Progress"
+      ? complaint.manualEscalationEligibleAt || complaint.disagreementReason
+        ? { canEscalate: true } : {}
+      : {}),
+  };
+}
