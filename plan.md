@@ -156,7 +156,7 @@ Allow authorized Kitchen Staff to create, edit, and publish weekly breakfast/lun
 S09 uses Monday–Sunday in Asia/Karachi with one entry per day and meal type. Publication requires all 21 entries. Authorized Kitchen Staff share the editor and the original creator is recorded. Published edits appear immediately after a successful save and keep slot IDs stable. S10/S11 own snapshot integration and verification.
 
 #### S10 — Meal Reservations and Collection Arrangements
-Allow eligible students to make meal reservations and submit advance collection-difficulty notices. Route these to Kitchen Staff and provide the Warden with a read-only audit copy. Eligibility/proof rules need team clarification before they are treated as settled behavior.
+Allow students with a Warden-verified university commitment to reserve one portion from a published menu before 21:00 Asia/Karachi the previous day. Route reservations and advance collection notices to active Kitchen Staff, with house-scoped or designated-intake read-only Warden copies. Managers configure collection windows. Notices close one hour before the current opening time. Store tickets from immutable snapshots and keep audit and portion logging in S11.
 
 #### S11 — Meal Portion Logging and Audit
 Allow Kitchen Staff to log fixed meal portion allocations and the Warden to verify them. A failed audit creates a permanent Portion Discrepancy Record. Portion categories/quantities and audit details need to be specified from team decisions; preserve immutable snapshots.
@@ -210,7 +210,8 @@ These assignments are temporary and must be confirmed by the five-person team. M
 | Ifadha Hussain (Member 2) | S03, S04, S05 | Schedules and notification/worker integration; S04 Owner: Ifadha Hussain (Member 2); S04 Reviewer: Abiha; Final S04 approval authority: Ifadha Hussain (S04 Owner) |
 | Member 3 | S06, S07, S08 | Complaint lifecycle and escalation |
 | Abiha | S09 | Weekly meal menu publishing |
-| Member 4 | S10, S11, S13 | Meal reservations, portion audit, and Lost & Found reporting |
+| Abiha | S10 | Meal reservations and collection arrangements |
+| Member 4 | S11, S13 | Portion audit and Lost & Found reporting |
 | Member 5 | S12, S14 | Laundry concurrency and Lost & Found verification |
 
 Ownership does not mean working in isolation. Every member should participate in integration testing, review, and understanding the complete product. Avoid making one member the sole gatekeeper for all integrations; agree on shared review and merge practices.
@@ -224,7 +225,7 @@ Do not convert these into assumptions without a recorded team decision. A questi
 | OQ-01 | What exactly qualifies as Warden inactivity for the 18-hour direct escalation rule? | **Resolved.** Apply the rule to Pending and In Progress. Submission starts the clock. A recorded Warden status or urgency change resets the clock and removes the old unlock. Viewing the record has no effect. | S08 |
 | OQ-02 | What duration/condition constitutes the automated timeout for confirming responsibility non-completion after the reminder? | Resolved by the team. Evaluate eligible accepted parts at the first five-minute poll at or after one hour past the current deadline, with one shared alert per duty. | S05 live worker verification |
 | OQ-03 | What responsibility assignment/state transitions remain unspecified after Warden review, redistribution, withdrawal, and room transfer? | Confirm Owner-approved rules formally; decide only exact statuses and remaining-participant effects not specified in the approved workflow. Do not reopen selected rejection/non-response, material-change reacceptance, withdrawal, transfer, assistance deduplication/reassignment, concurrency, or notification-recipient rules. | Affected S04/S05 behavior |
-| OQ-04 | What eligibility evidence or authorization is required for meal reservations? | Preserve the requirement for students with authorized university commitments; clarify the validation workflow. | Eligibility portion of S10 |
+| OQ-04 | What eligibility evidence or authorization is required for meal reservations? | Resolved for S10. A Warden verifies the commitment outside the app and records approval by student and meal slot. The app retains the approver and time. | S10 |
 | OQ-05 | What are the fixed meal portion categories/quantities and what does the Warden verify? | Obtain team-approved operational values and audit rules. | Detailed S11 acceptance criteria |
 | OQ-06 | What are laundry operating hours and how are reservable slots generated? | Preserve 60-minute slot duration and concurrency rule; clarify schedule availability. | Slot-generation details in S12 |
 | OQ-07 | Architecture mentions `Closed` in one context while PRD lifecycle lists `Pending`, `In Progress`, `Resolved`, and `Escalated`. | Use the PRD lifecycle for planning; do not add `Closed` without reconciliation. | Complaint state implementation if `Closed` is required |

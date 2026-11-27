@@ -51,6 +51,10 @@ enum AssistanceRequestStatus {
 }
 
 model User {
+  mealReservations MealReservation[]
+  mealCollectionNotices MealCollectionNotice[]
+  receivedMealApprovals MealApproval[] @relation("MealApprovalStudent")
+  issuedMealApprovals MealApproval[] @relation("MealApprovalWarden")
   weeklyMenus WeeklyMenu[]
   id            String         @id @default(uuid()) @db.Uuid
   fullName      String         @map("full_name")
@@ -104,6 +108,7 @@ model WeeklyMenu {
 }
 
 model MenuItem {
+  allocationSnapshots MealAllocationSnapshot[]
   id           String     @id @default(uuid()) @db.Uuid
   weeklyMenuId String     @map("weekly_menu_id") @db.Uuid
   weeklyMenu   WeeklyMenu @relation(fields: [weeklyMenuId], references: [id], onDelete: Restrict)
@@ -316,6 +321,8 @@ model WorkerJobRun {
 }
 
 model House {
+  mealReservations MealReservation[]
+  mealCollectionNotices MealCollectionNotice[]
   id              String  @id @default(uuid()) @db.Uuid
   name            String  @unique
   primaryWardenId String? @map("primary_warden_id") @db.Uuid
@@ -326,6 +333,87 @@ model House {
 
   @@index([primaryWardenId])
   @@map("houses")
+}
+
+enum MealReservationStatus {
+  RESERVED @map("Reserved")
+  CANCELLED @map("Cancelled")
+  FULFILLED @map("Fulfilled")
+}
+
+model MealApproval {
+  id         String   @id @default(uuid()) @db.Uuid
+  studentId  String   @map("student_id") @db.Uuid
+  approvedBy String   @map("approved_by") @db.Uuid
+  mealDate   DateTime @map("meal_date") @db.Date
+  mealType   MealType @map("meal_type")
+  approvedAt DateTime @default(now()) @map("approved_at")
+  student    User     @relation("MealApprovalStudent", fields: [studentId], references: [id], onDelete: Restrict)
+  warden     User     @relation("MealApprovalWarden", fields: [approvedBy], references: [id], onDelete: Restrict)
+
+  @@unique([studentId, mealDate, mealType])
+  @@map("meal_approvals")
+}
+
+model MealCollectionWindow {
+  mealType MealType @id @map("meal_type")
+  opensAt  String   @map("opens_at")
+  closesAt String   @map("closes_at")
+
+  @@map("meal_collection_windows")
+}
+
+model MealReservation {
+  id               String                @id @default(uuid()) @db.Uuid
+  userId           String                @map("user_id") @db.Uuid
+  submittedHouseId String?               @map("submitted_house_id") @db.Uuid
+  mealDate         DateTime              @map("meal_date") @db.Date
+  mealType         MealType              @map("meal_type")
+  status           MealReservationStatus @default(RESERVED)
+  reservedAt       DateTime              @default(now()) @map("reserved_at")
+  student          User                  @relation(fields: [userId], references: [id], onDelete: Restrict)
+  house            House?                @relation(fields: [submittedHouseId], references: [id], onDelete: Restrict)
+  snapshots        MealAllocationSnapshot[]
+  notices          MealCollectionNotice[]
+
+  @@unique([userId, mealDate, mealType])
+  @@index([submittedHouseId, reservedAt])
+  @@map("meal_reservations")
+}
+
+model MealAllocationSnapshot {
+  id                String   @id @default(uuid()) @db.Uuid
+  reservationId     String   @map("reservation_id") @db.Uuid
+  menuItemId        String?  @map("menu_item_id") @db.Uuid
+  itemNameSnapshot  String   @map("item_name_snapshot")
+  mealDateSnapshot  DateTime @map("meal_date_snapshot") @db.Date
+  mealTypeSnapshot  MealType @map("meal_type_snapshot")
+  portionCount      Int      @map("portion_count")
+  snapshotCreatedAt DateTime @default(now()) @map("snapshot_created_at")
+  reservation       MealReservation @relation(fields: [reservationId], references: [id], onDelete: Restrict)
+  menuItem          MenuItem? @relation(fields: [menuItemId], references: [id], onDelete: Restrict)
+
+  @@index([reservationId])
+  @@map("meal_allocation_snapshots")
+}
+
+model MealCollectionNotice {
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String   @map("user_id") @db.Uuid
+  submittedHouseId String?  @map("submitted_house_id") @db.Uuid
+  reservationId    String?  @map("reservation_id") @db.Uuid
+  requestId        String   @map("request_id") @db.Uuid
+  mealDate         DateTime @map("meal_date") @db.Date
+  mealType         MealType @map("meal_type")
+  explanation      String
+  submittedAt      DateTime @default(now()) @map("submitted_at")
+  student          User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  house            House?   @relation(fields: [submittedHouseId], references: [id], onDelete: Restrict)
+  reservation      MealReservation? @relation(fields: [reservationId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, requestId])
+  @@index([submittedHouseId, submittedAt])
+  @@map("meal_collection_notices")
 }
 
 model HouseWarden {
