@@ -13,3 +13,4 @@
 | 27 Nov 2026 | Abiha | S08 | Approved the HTL implementation plan and the four escalation policies. | Local testing evidence is recorded. Independent review and final acceptance are pending. |
 | 27 Nov 2026 | Abiha | S09 | Approved the HTL plan and the four weekly menu rules. | Test evidence in `docs/test.md`. Reviewer acceptance and S10/S11 regression pending. |
 | 27 Nov 2026 | Abiha | S10 | Approved the HTL plan and supplied initial collection hours and the requirement for Manager configuration. | Test evidence in `docs/test.md`. Independent review pending. |
+| 28 Nov 2026 | Abiha | S11 | Approved the HTL plan, whole-serving count, final audit and discrepancy rules, correction deferral, and Warden scope. | Test evidence in `docs/test.md`. Independent review pending. |

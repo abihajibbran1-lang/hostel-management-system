@@ -448,6 +448,12 @@ Accounts referenced by historical records are deactivated rather than physically
 - `logged_at` timestamp
 - Historical item name and meal context are stored as snapshot values so menu edits do not rewrite the log.
 
+**`meal_portion_audits`**
+
+- One final record per portion log, including passes.
+- Retain Warden identity, expected and observed whole portions, optional note and recorded time.
+- Write the final audit and any discrepancy in the same transaction.
+
 **`meal_portion_discrepancies`**
 - `id` UUID primary key
 - `portion_log_id` FK to `meal_portion_logs.id`
@@ -532,7 +538,7 @@ Because `target_id` is polymorphic, a conventional foreign key cannot cover ever
 | Schedules & Responsibilities | `rooms`, `room_residents`, `personal_schedules`, `responsibilities`, `responsibility_assignments` |
 | Laundry | `laundry_machines`, `laundry_slots`, `laundry_reservations` |
 | Complaints | `complaints`, `complaint_status_history` |
-| Meals | `weekly_menus`, `menu_items`, `meal_reservations`, `meal_allocation_snapshots`, `meal_portion_logs`, `meal_portion_discrepancies` |
+| Meals | `weekly_menus`, `menu_items`, `meal_reservations`, `meal_allocation_snapshots`, `meal_portion_logs`, `meal_portion_audits`, `meal_portion_discrepancies` |
 | Lost & Found | `lost_found_items`, `lost_found_images`, `lost_found_claims` |
 | Notification Service | `notifications` |
 | Worker infrastructure | `worker_job_runs` |
