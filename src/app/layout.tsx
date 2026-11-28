@@ -39,9 +39,11 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           )}
           {role === "WARDEN" && <Link href="/warden/complaints">Complaint Queue</Link>}
           {role === "WARDEN" && <Link href="/warden/meal-arrangements">Meal audit and approvals</Link>}
+          {role === "WARDEN" && <Link href="/warden/portion-logs">Meal portion audits</Link>}
           {role === "STUDENT" && <Link href="/meals/menu">Meal menu</Link>}
           {role === "KITCHEN_STAFF" && <Link href="/kitchen/menus">Manage weekly menu</Link>}
           {role === "KITCHEN_STAFF" && <Link href="/kitchen/meal-arrangements">Meal arrangements</Link>}
+          {role === "KITCHEN_STAFF" && <Link href="/kitchen/portion-logs">Meal portion logs</Link>}
           {role === "MANAGER" && <Link href="/manager/complaints">Escalated complaints</Link>}
           {role === "MANAGER" && <Link href="/manager/meal-collection-windows">Meal collection hours</Link>}
           {(role === "STUDENT" || role === "WARDEN" || role === "MANAGER") && <Link href="/responsibilities">Shared Responsibilities</Link>}

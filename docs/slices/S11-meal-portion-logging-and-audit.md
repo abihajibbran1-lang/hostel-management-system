@@ -1,6 +1,6 @@
 # S11 — Meal Portion Logging and Warden Audit
 
-**Status:** Specified; implementation not verified | **Owner:** Member 4 (provisional) | **Reviewer:** Member 2 (proposed) | **Priority:** P1 | **Estimate:** team to confirm
+**Status:** Testing | **Owner:** Abiha | **Requested reviewer:** abihajibbran1-lang | **Priority:** P1 | **Estimate:** team to confirm | **AI workflow:** HTL
 
 ## Goal and traceability
 FR-06, AC-FR-06-02, BR-09, BR-12, NFR-01; ADR-004.
@@ -43,12 +43,20 @@ All route/service names are proposals; reconcile with existing repository contra
 - **AC11-05:** Menu edits do not change historical portion logs or discrepancy context.
 - **AC11-06:** A failed transaction leaves no partial audit; retry of the same submission does not duplicate its discrepancy.
 
-## Open decisions / blockers
-1. Confirm fixed portion standards, units, expected quantity source and whether zero allocations are valid.
-2. Confirm audit pass/fail rules, repeat-audit policy and successful-audit persistence.
-3. Confirm correction policy for mistaken logs; do not overwrite historical evidence.
+## Approved decisions and implementation
 
-Do not silently select business rules. Continue independent work; mark affected criteria blocked until team approval.
+Abiha approved the plan on 28 November 2026. A portion is one whole standard serving. Kitchen Staff logs a positive planned count for a published meal slot. The log snapshots the name, date and meal type. The Warden compares the observed count with the stored plan. Zero observed is valid, and any difference is a failure.
+
+Each log has one final audit record, including passes. An identical retry by the same Warden returns the existing result. A changed submission conflicts. Failed audits create one discrepancy in the same transaction. Logs, audits and discrepancies have no update or delete actions. Handle mistakes outside the app until a correction workflow is approved.
+
+Active Wardens can audit shared kitchen logs hostel-wide. The API returns staff attribution and meal counts. It does not return Student identities or reservation records. The additive migration introduces `meal_portion_audits` for final evidence, alongside the two architecture-defined tables.
+
+## Manual verification
+
+1. Apply migrations to a disposable local PostgreSQL database, provision active Kitchen Staff and Warden accounts, and run `npm.cmd run dev`.
+2. Publish a weekly menu. As Kitchen Staff, open **Meal portion logs**, choose a date, and log two allocations for a published meal.
+3. As Warden, open **Meal portion audits** for that date. Record a matching count for one allocation and zero for the other. The matching audit should pass without a discrepancy. The failed audit should retain a discrepancy ID and both counts.
+4. Edit the published meal name and reload the audit page. Verify the logs retain their original names, counts and discrepancy IDs. If an S10 ticket exists for that meal, verify its snapshot still displays the original name.
 
 ## Test plan
 Unit: quantity validation and approved audit rules. PostgreSQL: immutable history, audit rollback, foreign keys and duplicate submission. E2E: Kitchen Staff log, Warden pass/fail audit, menu edit regression.

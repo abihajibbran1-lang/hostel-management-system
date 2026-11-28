@@ -56,7 +56,7 @@ The owners below are the **provisional allocation** from the project plan. Confi
 | S08 | Complaint Escalation and Linked Complaints | Student direct escalation, automatic escalation, linked complaints and assigned Manager queue | FR-10, FR-11, FR-12; BR-02, BR-03, BR-05, BR-07; CON-01; ADR-005 | S01, S02, S06, S07; worker foundation | Abiha | abihajibbran1-lang (requested) | P0 | Testing |
 | S09 | Weekly Meal Menu Publishing | Kitchen Staff create/edit/publish weekly breakfast/lunch/dinner menu; student read-only view | FR-15; BR-12; NFR-01; ADR-004 | S00, S01; final history regression depends on S10/S11 | Abiha | abihajibbran1-lang (requested) | P1 | Testing |
 | S10 | Meal Reservations and Collection Arrangements | Approved meal reservations, immutable tickets, advance notices, configurable collection hours and Warden audit copies | FR-05; AC-FR-05-01; FR-15; BR-12; NFR-01; ADR-004 | S01, S02, S09, verified room assignments or designated intake | Abiha | abihajibbran1-lang (requested) | P1 | Testing |
-| S11 | Meal Portion Logging and Audit | Fixed portion allocation logging, Warden verification, discrepancy record | FR-06; BR-09, BR-12; ADR-004 | S01, S09, S10 | Member 4 | Member 5 | P1 | Planned |
+| S11 | Meal Portion Logging and Audit | Fixed portion allocation logging, Warden verification, discrepancy record | FR-06; AC-FR-06-02; BR-09, BR-12; NFR-01; ADR-004 | S01, S09, S10 | Abiha | abihajibbran1-lang (requested) | P1 | Testing |
 | S12 | Laundry Reservations | Available machine slots, 60-minute reservations, cancellation and atomic prevention of duplicate slot booking | FR-13; BR-10; ADR-002 | S01 | Member 5 | Member 1 | P0 | Planned |
 | S13 | Lost & Found Reporting and Searching | Student lost/found item reports, searchable listings and private image storage handling | FR-14; BR-11; architecture storage constraints | S01 | Member 4 | Member 5 | P1 | Planned |
 | S14 | Lost & Found Claims and Verification | Student claim flow, Warden-mediated verification and Returned status | FR-14; BR-11 | S01, S13 | Member 5 | Member 3 | P1 | Planned |
@@ -121,7 +121,7 @@ Do not convert these into implementation assumptions without a recorded team dec
 | OQ-02 | How system timeout confirms responsibility non-completion under FR-04 | S05 | Resolved. At the first poll at or after the deadline plus one hour, evaluate each eligible accepted part with a reminder for its current version. Share the one-alert-per-duty rule with self-reports. |
 | OQ-03 | Remaining S04 responsibility assignment/state transitions after Warden review, redistribution, withdrawal, and room transfer | S04/S05 | Formally confirm Owner-approved rules; resolve only exact statuses and remaining-participant effects not specified. Do not reopen selected rejection/non-response, material-change reacceptance, withdrawal, transfer, assistance deduplication/reassignment, concurrency, or notification-recipient rules. |
 | OQ-04 | Meal reservation eligibility and acceptable proof for university commitments | S10 | Resolved. A Warden verifies the commitment outside the app and records approval for the student and meal slot. |
-| OQ-05 | Exact fixed meal portion categories/quantities | S11 | Confirm with the team/PRD; do not invent values. |
+| OQ-05 | Exact fixed meal portion categories/quantities | S11 | Resolved. Kitchen Staff logs positive whole standard servings for a published meal. The Warden compares the observed count with the stored allocation; zero observed is valid. |
 | OQ-06 | Laundry operating hours and slot-generation policy | S12 | 60-minute slot duration is established; operating window and slot generation remain to be clarified if not specified elsewhere. |
 | OQ-07 | Complaint lifecycle naming conflict (`Resolved`/`Escalated` in PRD versus `Closed` in architecture schema) | S06–S08 | Record exact source statements and obtain a team decision before implementing the conflicting state mapping. |
 | OQ-08 | Complaint title field mismatch between architecture schema and PRD mandatory submission fields | S06 | Do not make title mandatory unless the team confirms the requirement. |
@@ -162,6 +162,7 @@ A slice may move to **Complete** only when:
 | 27 Nov 2026 | S08 rules approved and implementation moved to Testing. HTL workflow and a provisional estimate of 2–3 focused days. Browser acceptance and independent review remain pending. | Abiha |
 | 27 Nov 2026 | S09 menu rules approved under HTL and implementation moved to Testing. Estimate remains unconfirmed. Independent review and S10/S11 snapshot verification remain pending. | Abiha |
 | 27 Nov 2026 | S10 meal policies and configurable collection hours approved under HTL. Implementation moved to Testing. Estimate and independent review remain pending. | Abiha |
+| 28 Nov 2026 | S11 portion and audit policies approved under HTL. Implementation moved to Testing. Estimate and independent review remain pending. | Abiha |
 
 
 ## 10. Specification drafting update — 15 Nov 2026

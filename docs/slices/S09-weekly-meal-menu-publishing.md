@@ -41,7 +41,7 @@ The implemented routes use those paths and add `GET /api/meals/menus?weekStart=Y
 
 Abiha approved on 27 November 2026. The hostel week is Monday–Sunday in `Asia/Karachi`. Each date has one entry for breakfast, lunch and dinner, and an entry can describe multiple dishes. A draft needs all 21 entries before publishing. Approved edits to published entries appear after a successful atomic save. Each edit keeps the existing item ID and slot. All Kitchen Staff manage the shared menu, and the original creator is recorded.
 
-S10 and S11 own immutable reservation and portion snapshots. S09 exposes stable menu item references and leaves their regression gate pending until those slices exist. See [test evidence](../test.md).
+S10 and S11 own immutable reservation and portion snapshots. During S11, a local PostgreSQL regression confirmed that edits to the published menu preserve an existing S10 ticket and S11 portion log and discrepancy. See [test evidence](../test.md).
 
 ## Manual verification
 

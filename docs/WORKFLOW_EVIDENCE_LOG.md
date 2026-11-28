@@ -1,5 +1,13 @@
 # Workflow Evidence Log
 
+## S11 HTL implementation — 28 November 2026
+
+Abiha approved whole standard servings, exact-count auditing including zero observed, one final audit with safe retries, deferred corrections, and hostel-wide Warden access. The additive Meals migration records final audits including passes, while failed audits write a separate discrepancy in the same transaction.
+
+`node --test --experimental-test-isolation=none --test-reporter=dot tests/*.test.ts` passed 174 tests. `npm.cmd run lint`, `npm.cmd run typecheck`, `npm.cmd run build`, and Prisma schema validation passed. Temporary `node .s11-smoke/verify.mjs` applied all thirteen migrations and verified draft rejection, pass/fail, retries, transactional rollback and the S09/S10/S11 history regression. The database smoke test used one connection. [Test evidence](test.md) records results by acceptance criterion.
+
+Temporary `node .s11-smoke/browser.mjs` verified Chrome sign-in, Kitchen Staff logging, both Warden results, and preserved history after a published-menu edit. Independent review and testing with separate concurrent sessions on standalone PostgreSQL remain pending. The correction workflow remains deferred.
+
 ## S10 HTL implementation — 27 November 2026
 
 Abiha approved the reservation and notice policy, supplied the initial Karachi collection windows, and requested configurable hours. The implementation uses Manager-only hour updates and assumes staff verify university commitments outside the app. Server-side approval and snapshot data are recorded independently of the menu. The S10 specification records scope, configuration and setup.

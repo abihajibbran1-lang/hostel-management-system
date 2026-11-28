@@ -558,7 +558,7 @@ Use the logical schema and field definitions in `architecture.md` Section 15 as 
 - Schedules & Responsibilities owns `rooms`, `room_residents`, `personal_schedules`, `responsibilities`, and `responsibility_assignments`.
 - Laundry owns `laundry_machines`, `laundry_slots`, and `laundry_reservations`.
 - Complaints owns `complaints` and `complaint_status_history`.
-- Meals owns `weekly_menus`, `menu_items`, `meal_reservations`, `meal_allocation_snapshots`, `meal_portion_logs`, and `meal_portion_discrepancies`.
+- Meals owns `weekly_menus`, `menu_items`, `meal_reservations`, `meal_allocation_snapshots`, `meal_portion_logs`, `meal_portion_audits`, and `meal_portion_discrepancies`.
 - Lost & Found owns `lost_found_items`, `lost_found_images`, and `lost_found_claims`.
 - Notification Service owns `notifications`.
 - Worker infrastructure owns `worker_job_runs`.
